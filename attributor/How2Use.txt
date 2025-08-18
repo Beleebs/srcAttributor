@@ -1,0 +1,15 @@
+To use you need the following libraries:
+
+- libxml (tree, parser, xmlstring)
+- nlohmann/json (used for json parsing)
+- openssl (sha1 hashing)
+
+Additionally, make sure all xml files ran through srcml are of the format: "originalCodeFile.cpp.xml"
+For example, the file "MazeGame.cpp" should have the corresponding xml file "MazeGame.cpp.xml"
+
+Running the program
+- make clean
+- make attributor
+- ./attributor [json file]
+
+It should hopefully work. Hail Mary.
