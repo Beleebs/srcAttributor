@@ -1,26 +1,24 @@
-#include <fstream>
-#include <nlohmann/json.hpp>
-#include "openxml.hpp"
+#include <attributor.hpp>
 
-using json = nlohmann::json;
+int main(int argc, char** argv) {
+    // cli11 targets being used for operations
+    std::string fileIn = "";
+    std::string fileOut = "";
+    
+    CLI::App app{"srcAttributor is a property generator based on srcSlice outputs.", "srcAttributor"};
+    app.add_option("-i,--input", fileIn, "JSON File Input")
+        ->required()
+        ->check(CLI::ExistingFile);
+    /*
+    app.add_option("-o,--output", fileOut, "XML File Output")
+    ->required()
+    ->check(CLI::ExistingFile);
+    */
+    CLI11_PARSE(app, argc, argv);
 
-std::string getSliceName(std::string);
-int getSliceDeclLine(std::string);
-
-// static variables
-const bool conciseMode = true;
-
-int main(int argc, char* argv[]) {
-    // follows proper syntax
-    if (argc != 2) {
-        std::cout << "Syntax: ./jsonReader [json]" << std::endl;
-        return 1;
-    }
-
-    std::string filename = argv[1];
     
     // create ifstream with the filename, along with the json object
-    std::ifstream file(filename);
+    std::ifstream file(fileIn);
     json j;
 
     // load file into json j
@@ -83,34 +81,4 @@ int main(int argc, char* argv[]) {
             // std::cout << "\t" << sliceAttribute << ": " << sliceValue << std::endl;
         }
     }
-}
-
-// returns slice name
-// since the slice name always follows the format of name, line number declared, sha1 filename hash, we can find the name of the slice by getting a substring until a '-'.
-// since variable names cannot include a '-'.
-std::string getSliceName(std::string key) {
-    std::string sliceName;
-    size_t hyphen = key.find("-");
-    
-    // finds hyphen
-    if (hyphen != std::string::npos) 
-        sliceName = key.substr(0, hyphen);
-    else 
-        sliceName = key;
-
-    // returns slice name
-    return sliceName;
-}
-
-// returns decl line number
-// gets the slice name, sets as a start for substr, goes until next '-'
-int getSliceDeclLine(std::string key) {
-    // Gets the index of the slice name's final character
-    std::string sliceName = getSliceName(key);
-    int strStart = sliceName.length() + 1;
-
-    // creates substring starting at the index after the first '-' (the decl line number) 
-    std::string sliceLineStr = getSliceName(key.substr(strStart, key.length()));
-    int sliceLine = std::stoi(sliceLineStr);
-    return sliceLine;
 }
