@@ -34,7 +34,9 @@ void FindDeclElement(xmlNodePtr parentNode, int declLine, std::string hash) {
 // similar to FindDeclElement
 void FindExprElement(xmlNodePtr parentNode, std::string attributeType, int lineNumber, std::string hash) {
     bool isDeclStatement = false;
+    bool isInit = false;
     bool sliceHasDef = false;
+    // grabs the parent node, every loop goes to the next node
     for (xmlNodePtr current = parentNode; current; current = current->next) {
         xmlNsPtr xmlNamespace = xmlSearchNs(current->doc, current, (const xmlChar*)"slice");
         if (current->type == XML_ELEMENT_NODE) {
@@ -43,8 +45,12 @@ void FindExprElement(xmlNodePtr parentNode, std::string attributeType, int lineN
             if (xmlStrcmp(current->name, (const xmlChar*)"decl") == 0) {
                 isDeclStatement = true;
             }
+            // Same with the "init" element
+            if (xmlStrcmp(current->name, (const xmlChar*)"init") == 0) {
+                isInit = true;
+            }
             // isDeclStatement prevents the inner expr statements from being inserted into.
-            if (xmlStrcmp(current->name, (const xmlChar*)"expr") == 0 && !isDeclStatement) {
+            if (xmlStrcmp(current->name, (const xmlChar*)"expr") == 0 && !isDeclStatement && !isInit) {
                 // checks if its the correct expr element
                 if (xmlGetLineNo(current) == lineNumber + 1) {
                     // Adds either "slice:use" or "slice:def"
@@ -81,7 +87,7 @@ void FindExprElement(xmlNodePtr parentNode, std::string attributeType, int lineN
                         }
                         // if slice:use already exists, then the hash is concatenated.
                         else {
-                            // std::cout << "slice use found." << std::endl;
+                            std::cout << "slice use found." << std::endl;
                             if (!sliceHasDef) {
                                 const xmlChar* oldValue = xmlGetNsProp(current, (const xmlChar*)"use", (const xmlChar*)"http://www.srcML.org/srcML/slice");
                                 std::string updatedValue = std::string((const char*)oldValue) + " " + hash;
