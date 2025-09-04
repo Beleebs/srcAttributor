@@ -1,0 +1,72 @@
+{
+"a-16-3816b5fe163975b44baf08169f0b9e5d1b4d10f3":{
+    "file":"test5.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"pbv",
+    "type":"int",
+    "name":"a",
+    "dependence":[],
+    "aliases":[],
+    "calls":[],
+    "use":[17],
+    "definition":[16]
+},
+"v-15-3816b5fe163975b44baf08169f0b9e5d1b4d10f3":{
+    "file":"test5.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"pbv",
+    "type":"int",
+    "name":"v",
+    "dependence":[{"a":16}],
+    "aliases":[],
+    "calls":[],
+    "use":[16],
+    "definition":[15]
+},
+"r-20-3816b5fe163975b44baf08169f0b9e5d1b4d10f3":{
+    "file":"test5.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"pbr",
+    "type":"int&",
+    "name":"r",
+    "dependence":[],
+    "aliases":[],
+    "calls":[],
+    "use":[21],
+    "definition":[20,21]
+},
+"y-9-3816b5fe163975b44baf08169f0b9e5d1b4d10f3":{
+    "file":"test5.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"main",
+    "type":"int",
+    "name":"y",
+    "dependence":[],
+    "aliases":[],
+    "calls":[],
+    "use":[11],
+    "definition":[9]
+},
+"x-8-3816b5fe163975b44baf08169f0b9e5d1b4d10f3":{
+    "file":"test5.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"main",
+    "type":"int",
+    "name":"x",
+    "dependence":[],
+    "aliases":[],
+    "calls":[{"functionName":"pbr","parameter":"1","definitionLine":"0"},{"functionName":"pbv","parameter":"1","definitionLine":"0"}],
+    "use":[9,10,12],
+    "definition":[8]
+}
+}
