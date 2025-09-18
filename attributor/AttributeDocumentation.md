@@ -152,3 +152,18 @@ Corresponding XML File <b>WITH</b> <code>slice:def</code>:
 ```xml
 
 ```
+
+# Elements Containing Slice Attributes
+
+- <code>decl</code>
+    - <code>decl</code>
+    - <code>use</code>
+- <code>expr</code>
+    - <code>def</code>
+    - <code>use</code>
+- <code>while</code>
+    - <code>use</code>
+    - <code>def</code>
+- <code>if</code>
+    - <code>use</code>
+    - <code>def</code>

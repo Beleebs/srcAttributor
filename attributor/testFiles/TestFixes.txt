@@ -1,0 +1,25 @@
+AS OF 9/12/2025
+
+Test 1: (basic program)
+    - It works. HOORAY!!!!!!!
+
+Test 2: (if statements)
+    - slice:use for b is missing line 9
+    - declaration for one of the parameters in line 15 is missing
+    - (its pass by value, the function return is correct)
+
+Test 3: (for loops)
+    - Need to fix the insertion of for loops
+        - slice:use of y is included in the <init> portion.
+        - i only used once in <init>, not in other <expr>'s
+
+Test 4: (while loop)
+    - slice:def for x missing in line 9
+        - probably due to it being part of block content, a child of the while element in line 8.
+
+Test 5: (value vs. reference)
+    - ill have to ask about the syntax of using pass by reference
+
+GENERAL CHANGES: (FIX FIRST)
+    - rework concatenation criteria, some of them are not working properly.
+    - maybe place slice hashes into function parameter lists
