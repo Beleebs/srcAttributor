@@ -1,7 +1,0 @@
-/mnt/c/Users/super/Desktop/GitHub/XML Testing/build/CMakeFiles/test.dir
-/mnt/c/Users/super/Desktop/GitHub/XML Testing/build/CMakeFiles/edit_cache.dir
-/mnt/c/Users/super/Desktop/GitHub/XML Testing/build/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/super/Desktop/GitHub/XML Testing/build/src/CMakeFiles/srcattributor.dir
-/mnt/c/Users/super/Desktop/GitHub/XML Testing/build/src/CMakeFiles/test.dir
-/mnt/c/Users/super/Desktop/GitHub/XML Testing/build/src/CMakeFiles/edit_cache.dir
-/mnt/c/Users/super/Desktop/GitHub/XML Testing/build/src/CMakeFiles/rebuild_cache.dir

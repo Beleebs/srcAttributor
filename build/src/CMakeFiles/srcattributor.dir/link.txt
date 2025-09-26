@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wno-reorder -Wunused-variable -Wunused-parameter -Wnarrowing -Werror=narrowing -Wno-error=all CMakeFiles/srcattributor.dir/cpp/json.cpp.o CMakeFiles/srcattributor.dir/cpp/main.cpp.o CMakeFiles/srcattributor.dir/cpp/xml.cpp.o -o ../bin/srcattributor  /usr/lib/x86_64-linux-gnu/libxml2.so -lcrypto

@@ -163,7 +163,6 @@ void insertAttributes(SliceProfileHandler& slices, std::string xmlFileName) {
         int decl = sp.getDecl();
         slices.findDecl(sp, root, decl);
         
-
         // step 2: defs
         for (const auto& def : sp.getDefs()) {
             root = xmlDocGetRootElement(doc);
