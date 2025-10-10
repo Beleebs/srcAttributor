@@ -29,7 +29,7 @@ public:
     bool parseExpr (const SliceProfile& slice, xmlNodePtr exprStart, const char* type);
 
     // returns true if the slice's information matches with the content found in the decl element
-    bool parseDecl (const SliceProfile& slice, xmlNodePtr declStart);
+    bool parseDecl (const SliceProfile& slice, xmlNodePtr declStart, const char* type);
 
     // inserts attributes found from findDecl/Use/Def
     friend void insertAttributes(SliceProfileHandler& ptrLocations, std::string xmlFileName);

@@ -38,14 +38,6 @@ int main(int argc, char** argv) {
     // Gets all slice profiles from the json, pushes into slices
     getSliceProfiles(j, slices);
 
-    /* debug print
-    std::cout << std::endl;
-    for (auto& singleProfile : slices) {
-        singleProfile.print();
-        std::cout << std::endl;
-    }
-    */
-
     // EXECUTE XML PHASE!!!!!!!!!!
     SliceProfileHandler sph(slices);
     insertAttributes(sph, outputFile);
