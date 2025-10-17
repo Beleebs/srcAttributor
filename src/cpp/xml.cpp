@@ -13,23 +13,18 @@ void SliceProfileHandler::print() const {
         e.print();
 }
 
-// used to check for parent nodes with (usually) expr, decl, etc.
-// not working right now
-bool hasAttributeParent(xmlNodePtr childNode, std::vector<std::string> elements) {
-    xmlNodePtr current = childNode->parent;
-    for (auto t : elements) {
-        if (current) {
-            if (xmlStrcmp((const xmlChar*)t.c_str(), current->name) == 0) {
-                return true;
-            }
-        }
+// used to find the location of a parent decl element, if it exists.
+xmlNodePtr findDeclParent(xmlNodePtr location) {
+    if (!location) {
+        return nullptr;
     }
-
-    if (hasAttributeParent(current, elements) && current->parent) {
-        return true;
+    if (xmlStrcmp(location->name, (const xmlChar*)"decl") == 0) {
+        return location;
     }
-
-    return false;
+    if (location->parent) {
+        return findDeclParent(location->parent);
+    }
+    return nullptr;
 }
 
 std::vector<std::string> getContents(xmlNodePtr parent) {
@@ -37,7 +32,27 @@ std::vector<std::string> getContents(xmlNodePtr parent) {
     for (xmlNodePtr current = parent; current; current = current->next) {
         result.push_back((const char*)xmlNodeGetContent(current));
     }
+    std::cout << "Parent: " << parent->name << " and its contents:";
+    for (auto s : result) {
+        std::cout << s << ",";
+    }
+    std::cout << std::endl;
     return result;
+}
+
+// checks to see if the expr location is a conditional
+// has to do with a wacky thing where assignment CAN be used in the conditional *sigh*
+bool checkConditional(xmlNodePtr location) {
+    std::vector<std::string> contents = getContents(location);
+    if (location->parent && xmlStrcmp(location->parent->name, (const xmlChar*)"condition") == 0) {
+        for (auto c : contents) {
+            if (c == "= " || c == "=") {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
 }
 
 bool SliceProfileHandler::parseExpr(const SliceProfile &slice, xmlNodePtr exprStart, const char* type) {
@@ -49,7 +64,15 @@ bool SliceProfileHandler::parseExpr(const SliceProfile &slice, xmlNodePtr exprSt
         for(auto str : contents) {
             if (xmlStrcmp((const xmlChar*)sliceName, (const xmlChar*)str.c_str()) == 0) {
                 // std::cout << "true: parseExpr(" << type << ") = " << content << std::endl;
-                addAttribute(slice, exprStart, type);
+                // this checks to see if the expr is in a <decl>
+                // if it is inside a decl, then place the stuff in decl instead!!!!
+                xmlNodePtr parentDecl = findDeclParent(exprStart);
+                if (parentDecl) {
+                    addAttribute(slice, parentDecl, type);
+                }
+                else {
+                    addAttribute(slice, exprStart, type);
+                }
                 return true;
             }
         }
@@ -128,10 +151,11 @@ xmlNodePtr SliceProfileHandler::findDef(const SliceProfile &slice, xmlNodePtr st
     // starts at the beginning of the file
     for (xmlNodePtr current = start; current; current = current->next) {
         if (current->type == XML_ELEMENT_NODE) {
-            // expr hit
+            // decl hit, skip
             if (xmlStrcmp(current->name, (const xmlChar*)"decl") == 0) {
                 break;
             }
+            // expr hit
             if (xmlStrcmp(current->name, (const xmlChar*)"expr") == 0 && xmlGetLineNo(current) == hintLine + 1) {
                 // std::cout << "attempting parseExpr with element " << current->name << ": " << std::endl;
                 if (this->parseExpr(slice, current, "def")) {
@@ -161,46 +185,62 @@ xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const ch
     }
 
     if (attType == "def") {
-        if (xmlStrcmp(location->name, (const xmlChar*)"expr") == 0) {
+        // NEEDS to be in an expr element
+        if (xmlStrcmp(location->name, (const xmlChar *)"expr") == 0) {
             // if the node already has a def, concatenate
-            if (xmlHasNsProp(location, (const xmlChar*)"def", xmlNamespace->href) != NULL) {
-                const xmlChar* oldValue = xmlGetNsProp(location, (const xmlChar*)"def", xmlNamespace->href);
-                hash = hash + " " + std::string((const char*)oldValue);
+            if (xmlHasNsProp(location, (const xmlChar *)"def", xmlNamespace->href) != NULL) {
+                const xmlChar *oldValue = xmlGetNsProp(location, (const xmlChar *)"def", xmlNamespace->href);
+                hash = hash + " " + std::string((const char *)oldValue);
+                xmlSetNsProp(location, xmlNamespace, (const xmlChar *)"def", (const xmlChar *)hash.c_str());
+                return location;
             }
-
-            // if (!hasAttributeParent(location, {"expr", "decl"})) {
-            xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"def", (const xmlChar*)hash.c_str());
-            // }
+            // no def yet
+            else {
+                xmlSetNsProp(location, xmlNamespace, (const xmlChar *)"def", (const xmlChar *)hash.c_str());
+            }
         }
     }
 
     if (attType == "use") {
-        // if the node has a def
-        if (xmlHasNsProp(location, (const xmlChar*)"def", xmlNamespace->href) != NULL) {
-            const xmlChar* defValue = xmlGetNsProp(location, (const xmlChar*)"def", xmlNamespace->href);
-            // checks if there is a hash in def with the same hash
-            if (containsHash(defValue, hash)) {
-                // if there is, just return and exit function
+        // checks to see if the current location is in an <expr> or <decl>
+        if (xmlStrcmp(location->name, (const xmlChar*)"expr") == 0 || xmlStrcmp(location->name, (const xmlChar*)"decl") == 0) {
+            // if the node has a decl
+            if (xmlHasNsProp(location, (const xmlChar*)"decl", xmlNamespace->href) != NULL) {
+                const xmlChar* declValue = xmlGetNsProp(location, (const xmlChar*)"decl", xmlNamespace->href);
+                // checks if there is a hash in def with the same hash
+                if (containsHash(declValue, hash)) {
+                    // if there is, just return and exit function
+                    return location;
+                }
+                // no decl hash matches? all good!!! move on.
+            }
+            // if the node has a def
+            if (xmlHasNsProp(location, (const xmlChar*)"def", xmlNamespace->href) != NULL) {
+                const xmlChar* defValue = xmlGetNsProp(location, (const xmlChar*)"def", xmlNamespace->href);
+                // checks if there is a hash in def with the same hash
+                if (containsHash(defValue, hash)) {
+                    // if there is, just return and exit function
+                    return location;
+                }
+                // no def hash matches? all good!!! move on.
+            }
+            // if the node already has a use
+            if (xmlHasNsProp(location, (const xmlChar*)"use", xmlNamespace->href) != NULL) {
+                const xmlChar* oldValue = xmlGetNsProp(location, (const xmlChar*)"use", xmlNamespace->href);
+                std::string newValue = (const char*)oldValue;
+                // check if the hash is already present
+                if (!containsHash(oldValue, hash)) {
+                    // if it is, set the new value to the hash + old value
+                    newValue = hash + ' ' + (const char*)oldValue;
+                }
+                // set prop
+                xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"use", (const xmlChar*)newValue.c_str());
                 return location;
             }
-            // no def hash matches? all good!!! move on.
-        }
-        // if the node already has a use
-        if (xmlHasNsProp(location, (const xmlChar*)"use", xmlNamespace->href) != NULL) {
-            const xmlChar* oldValue = xmlGetNsProp(location, (const xmlChar*)"use", xmlNamespace->href);
-            std::string newValue = (const char*)oldValue;
-            // check if the hash is already present
-            if (!containsHash(oldValue, hash)) {
-                // if it is, set the new value to the hash + old value
-                newValue = hash + ' ' + (const char*)oldValue;
+            // if there is no use
+            else {
+                xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"use", (const xmlChar*)hash.c_str());
             }
-            // set prop
-            xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"use", (const xmlChar*)newValue.c_str());
-            return location;
-        }
-        // if there is no use
-        else {
-            xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"use", (const xmlChar*)hash.c_str());
         }
     }
     return location;
