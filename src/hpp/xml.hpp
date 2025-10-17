@@ -41,4 +41,7 @@ private:
 // adds different kinds of attributes for the insertAttributes function
 xmlNodePtr addAttribute(const SliceProfile& slice, xmlNodePtr location, const char* attType);
 
+// checks for hash appearance in a const xmlChar*
+bool containsHash(const xmlChar* attributeValue, std::string hash);
+
 #endif // SLICE_XML_HPP

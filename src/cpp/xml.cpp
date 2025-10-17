@@ -175,16 +175,62 @@ xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const ch
     }
 
     if (attType == "use") {
-        // if the node already has a use, concatenate
+        // if the node has a def
+        if (xmlHasNsProp(location, (const xmlChar*)"def", xmlNamespace->href) != NULL) {
+            const xmlChar* defValue = xmlGetNsProp(location, (const xmlChar*)"def", xmlNamespace->href);
+            // checks if there is a hash in def with the same hash
+            if (containsHash(defValue, hash)) {
+                // if there is, just return and exit function
+                return location;
+            }
+            // no def hash matches? all good!!! move on.
+        }
+        // if the node already has a use
         if (xmlHasNsProp(location, (const xmlChar*)"use", xmlNamespace->href) != NULL) {
             const xmlChar* oldValue = xmlGetNsProp(location, (const xmlChar*)"use", xmlNamespace->href);
-            if (xmlStrcmp(oldValue, (const xmlChar*)hash.c_str()) != 0) {
-                hash = hash + " " + std::string((const char*)oldValue);
+            std::string newValue = (const char*)oldValue;
+            // check if the hash is already present
+            if (!containsHash(oldValue, hash)) {
+                // if it is, set the new value to the hash + old value
+                newValue = hash + ' ' + (const char*)oldValue;
             }
+            // set prop
+            xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"use", (const xmlChar*)newValue.c_str());
+            return location;
         }
-        xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"use", (const xmlChar*)hash.c_str());
+        // if there is no use
+        else {
+            xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"use", (const xmlChar*)hash.c_str());
+        }
     }
     return location;
+}
+
+bool containsHash(const xmlChar* attributeValue, std::string hash) {
+    std::string valueString = (const char*)attributeValue;
+    std::vector<std::string> hashes;
+    std::string foundHash = "";
+    size_t pos = 0;
+
+    while (pos < valueString.size()) {
+        if (valueString[pos] == ' ') {
+            hashes.push_back(foundHash);
+            foundHash = "";
+        } 
+        else {
+            foundHash += valueString[pos];
+        }
+        ++pos;
+    }
+    if (!foundHash.empty()) {
+        hashes.push_back(foundHash);
+    }
+
+    for (auto h : hashes) {
+        if (h == hash)
+            return true;
+    }
+    return false;
 }
 
 void insertAttributes(SliceProfileHandler& slices, std::string xmlFileName) {

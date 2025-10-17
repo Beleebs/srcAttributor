@@ -29,3 +29,8 @@ or
 ```
 
 !!!!!!!!!DECL ELEMENTS DING DING DING!!!!!!!!!!
+
+ONLY 3 MORE PROBLEMS
+- def cannot be placed if there is already a decl attribute
+- make sure if there is a def containing the same hash as a use, use cannot be placed on same line.
+- use cannot be placed if there is already a decl attribute (in the decl) (found from for loops)

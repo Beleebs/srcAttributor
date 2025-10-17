@@ -5,9 +5,9 @@
 <function><type><name>int</name></type> <name>main</name><parameter_list>()</parameter_list> <block>{<block_content>
     <decl_stmt><decl slice:decl="7e186ab960224df8228117ad428045028d1239d3"><type><name>int</name></type> <name>x</name> <init>= <expr><literal type="number">10</literal></expr></init></decl>;</decl_stmt>
     <decl_stmt><decl slice:decl="1ce03ad47025d8894b7fcc8acd463ad04f3d58ae"><type><name>int</name></type> <name>y</name> <init>= <expr><literal type="number">20</literal></expr></init></decl>;</decl_stmt>
-    <while>while <condition>(<expr><name>y</name> <operator>&gt;</operator> <name>x</name></expr>)</condition> <block>{<block_content>
-        <expr_stmt><expr><operator>++</operator><name>x</name></expr>;</expr_stmt>
+    <while>while <condition>(<expr slice:use="1ce03ad47025d8894b7fcc8acd463ad04f3d58ae 7e186ab960224df8228117ad428045028d1239d3"><name>y</name> <operator>&gt;</operator> <name>x</name></expr>)</condition> <block>{<block_content>
+        <expr_stmt><expr slice:def="7e186ab960224df8228117ad428045028d1239d3" slice:use="7e186ab960224df8228117ad428045028d1239d3"><operator>++</operator><name>x</name></expr>;</expr_stmt>
     </block_content>}</block></while>
-    <expr_stmt><expr><name><name>std</name><operator>::</operator><name>cout</name></name> <operator>&lt;&lt;</operator> <literal type="string">"x = "</literal> <operator>&lt;&lt;</operator> <name>x</name> <operator>&lt;&lt;</operator> <name><name>std</name><operator>::</operator><name>endl</name></name></expr>;</expr_stmt>
+    <expr_stmt><expr slice:use="7e186ab960224df8228117ad428045028d1239d3"><name><name>std</name><operator>::</operator><name>cout</name></name> <operator>&lt;&lt;</operator> <literal type="string">"x = "</literal> <operator>&lt;&lt;</operator> <name>x</name> <operator>&lt;&lt;</operator> <name><name>std</name><operator>::</operator><name>endl</name></name></expr>;</expr_stmt>
 </block_content>}</block></function>
 </unit>
