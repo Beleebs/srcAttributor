@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<unit xmlns="http://www.srcML.org/srcML/src" xmlns:cpp="http://www.srcML.org/srcML/cpp" xmlns:slice="http://www.srcML.org/srcML/slice" revision="1.0.0" language="C++" filename="testing/test2.cpp"><cpp:include>#<cpp:directive>include</cpp:directive> <cpp:file>&lt;iostream&gt;</cpp:file></cpp:include>
+<unit xmlns="http://www.srcML.org/srcML/src" xmlns:cpp="http://www.srcML.org/srcML/cpp" revision="1.0.0" language="C++" filename="testing/test2.cpp"><cpp:include>#<cpp:directive>include</cpp:directive> <cpp:file>&lt;iostream&gt;</cpp:file></cpp:include>
 
 <function_decl><type><name>int</name></type> <name>foobar</name><parameter_list>(<parameter><decl><type><name>int</name></type></decl></parameter>, <parameter><decl><type><name>int</name></type></decl></parameter>)</parameter_list>;</function_decl>
 
 <function><type><name>int</name></type> <name>main</name><parameter_list>()</parameter_list> <block>{<block_content>
-    <decl_stmt><decl slice:decl="a92c5eed84428204180530aa2e441493c9311c33"><type><name>int</name></type> <name>a</name> <init>= <expr><literal type="number">20</literal></expr></init></decl>;</decl_stmt>
-    <decl_stmt><decl slice:decl="858c088e46401bc8e3b1e7876e223b4ceb5df6a9"><type><name>int</name></type> <name>b</name> <init>= <expr><literal type="number">30</literal></expr></init></decl>;</decl_stmt>
-    <decl_stmt><decl slice:decl="a1f8b55e7fe4c98764f77dce6495c84733fb04dd"><type><name>int</name></type> <name>c</name> <init>= <expr slice:use="858c088e46401bc8e3b1e7876e223b4ceb5df6a9 a92c5eed84428204180530aa2e441493c9311c33"><call><name>foobar</name><argument_list>(<argument><expr><name>a</name></expr></argument>, <argument><expr><name>b</name></expr></argument>)</argument_list></call></expr></init></decl>;</decl_stmt>
-    <if_stmt><if>if <condition>(<expr slice:use="a1f8b55e7fe4c98764f77dce6495c84733fb04dd"><name>c</name> <operator>&lt;</operator> <literal type="number">100</literal></expr>)</condition> <block>{<block_content>
+    <decl_stmt><decl><type><name>int</name></type> <name>a</name> <init>= <expr><literal type="number">20</literal></expr></init></decl>;</decl_stmt>
+    <decl_stmt><decl><type><name>int</name></type> <name>b</name> <init>= <expr><literal type="number">30</literal></expr></init></decl>;</decl_stmt>
+    <decl_stmt><decl><type><name>int</name></type> <name>c</name> <init>= <expr><call><name>foobar</name><argument_list>(<argument><expr><name>a</name></expr></argument>, <argument><expr><name>b</name></expr></argument>)</argument_list></call></expr></init></decl>;</decl_stmt>
+    <if_stmt><if>if <condition>(<expr><name>c</name> <operator>&lt;</operator> <literal type="number">100</literal></expr>)</condition> <block>{<block_content>
         <expr_stmt><expr><name><name>std</name><operator>::</operator><name>cout</name></name> <operator>&lt;&lt;</operator> <literal type="string">"Ding"</literal> <operator>&lt;&lt;</operator> <name><name>std</name><operator>::</operator><name>endl</name></name></expr>;</expr_stmt>
     </block_content>}</block></if></if_stmt>
 </block_content>}</block></function>
 
-<function><type><name>int</name></type> <name>foobar</name><parameter_list>(<parameter><decl slice:decl="7d4011934ece19c93a3b85a030441960b1f504ca"><type><name>int</name></type> <name>x</name></decl></parameter>, <parameter><decl slice:decl="36eca92d0b7d29a46d113a50c0b0e7411ea2ed87"><type><name>int</name></type> <name>y</name></decl></parameter>)</parameter_list> <block>{<block_content>
-    <return>return <expr slice:use="36eca92d0b7d29a46d113a50c0b0e7411ea2ed87 7d4011934ece19c93a3b85a030441960b1f504ca"><name>x</name> <operator>+</operator> <name>y</name></expr>;</return>
+<function><type><name>int</name></type> <name>foobar</name><parameter_list>(<parameter><decl><type><name>int</name></type> <name>x</name></decl></parameter>, <parameter><decl><type><name>int</name></type> <name>y</name></decl></parameter>)</parameter_list> <block>{<block_content>
+    <return>return <expr><name>x</name> <operator>+</operator> <name>y</name></expr>;</return>
 </block_content>}</block></function></unit>

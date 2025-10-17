@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<unit xmlns="http://www.srcML.org/srcML/src" xmlns:cpp="http://www.srcML.org/srcML/cpp" xmlns:slice="http://www.srcML.org/srcML/slice" revision="1.0.0" language="C++" filename="testing/test5.cpp"><comment type="line">// pass by reference VS pass by value</comment>
+<unit xmlns="http://www.srcML.org/srcML/src" xmlns:cpp="http://www.srcML.org/srcML/cpp" revision="1.0.0" language="C++" filename="testing/test5.cpp"><comment type="line">// pass by reference VS pass by value</comment>
 <cpp:include>#<cpp:directive>include</cpp:directive> <cpp:file>&lt;iostream&gt;</cpp:file></cpp:include>
 
 <function_decl><type><name>int</name></type> <name>pbv</name><parameter_list>(<parameter><decl><type><name>int</name></type></decl></parameter>)</parameter_list>;</function_decl>
 <function_decl><type><name>void</name></type> <name>pbr</name><parameter_list>(<parameter><decl><type><name>int</name><modifier>&amp;</modifier></type></decl></parameter>)</parameter_list>;</function_decl>
 
 <function><type><name>int</name></type> <name>main</name><parameter_list>()</parameter_list> <block>{<block_content>
-    <decl_stmt><decl slice:decl="2357a9a3d212d9f682970a24dfcd7815b60feddf"><type><name>int</name></type> <name>x</name> <init>= <expr><literal type="number">10</literal></expr></init></decl>;</decl_stmt>
-    <decl_stmt><decl slice:decl="77a285d5237580882a04e95e72736420fdd40144"><type><name>int</name></type> <name>y</name> <init>= <expr slice:use="2357a9a3d212d9f682970a24dfcd7815b60feddf"><call><name>pbv</name><argument_list>(<argument><expr><name>x</name></expr></argument>)</argument_list></call></expr></init></decl>;</decl_stmt>
-    <expr_stmt><expr slice:use="2357a9a3d212d9f682970a24dfcd7815b60feddf"><call><name>pbr</name><argument_list>(<argument><expr><name>x</name></expr></argument>)</argument_list></call></expr>;</expr_stmt>
-    <expr_stmt><expr slice:use="77a285d5237580882a04e95e72736420fdd40144"><name><name>std</name><operator>::</operator><name>cout</name></name> <operator>&lt;&lt;</operator> <literal type="string">"y = "</literal> <operator>&lt;&lt;</operator> <name>y</name> <operator>&lt;&lt;</operator> <name><name>std</name><operator>::</operator><name>endl</name></name></expr>;</expr_stmt>
-    <expr_stmt><expr slice:use="2357a9a3d212d9f682970a24dfcd7815b60feddf"><name><name>std</name><operator>::</operator><name>cout</name></name> <operator>&lt;&lt;</operator> <literal type="string">"x = "</literal> <operator>&lt;&lt;</operator> <name>x</name> <operator>&lt;&lt;</operator> <name><name>std</name><operator>::</operator><name>endl</name></name></expr>;</expr_stmt>
+    <decl_stmt><decl><type><name>int</name></type> <name>x</name> <init>= <expr><literal type="number">10</literal></expr></init></decl>;</decl_stmt>
+    <decl_stmt><decl><type><name>int</name></type> <name>y</name> <init>= <expr><call><name>pbv</name><argument_list>(<argument><expr><name>x</name></expr></argument>)</argument_list></call></expr></init></decl>;</decl_stmt>
+    <expr_stmt><expr><call><name>pbr</name><argument_list>(<argument><expr><name>x</name></expr></argument>)</argument_list></call></expr>;</expr_stmt>
+    <expr_stmt><expr><name><name>std</name><operator>::</operator><name>cout</name></name> <operator>&lt;&lt;</operator> <literal type="string">"y = "</literal> <operator>&lt;&lt;</operator> <name>y</name> <operator>&lt;&lt;</operator> <name><name>std</name><operator>::</operator><name>endl</name></name></expr>;</expr_stmt>
+    <expr_stmt><expr><name><name>std</name><operator>::</operator><name>cout</name></name> <operator>&lt;&lt;</operator> <literal type="string">"x = "</literal> <operator>&lt;&lt;</operator> <name>x</name> <operator>&lt;&lt;</operator> <name><name>std</name><operator>::</operator><name>endl</name></name></expr>;</expr_stmt>
 </block_content>}</block></function>
 
-<function><type><name>int</name></type> <name>pbv</name><parameter_list>(<parameter><decl slice:decl="1ffed18204fe7a1cb1bf23144fb819dd7a9b362b"><type><name>int</name></type> <name>v</name></decl></parameter>)</parameter_list> <block>{<block_content>
-    <decl_stmt><decl slice:decl="ba948e2d1f62cc1beba92de25fad79eaa83bf447"><type><name>int</name></type> <name>a</name> <init>= <expr slice:use="1ffed18204fe7a1cb1bf23144fb819dd7a9b362b"><name>v</name> <operator>*</operator> <literal type="number">2</literal></expr></init></decl>;</decl_stmt>
-    <return>return <expr slice:use="ba948e2d1f62cc1beba92de25fad79eaa83bf447"><name>a</name></expr>;</return>
+<function><type><name>int</name></type> <name>pbv</name><parameter_list>(<parameter><decl><type><name>int</name></type> <name>v</name></decl></parameter>)</parameter_list> <block>{<block_content>
+    <decl_stmt><decl><type><name>int</name></type> <name>a</name> <init>= <expr><name>v</name> <operator>*</operator> <literal type="number">2</literal></expr></init></decl>;</decl_stmt>
+    <return>return <expr><name>a</name></expr>;</return>
 </block_content>}</block></function>
 
-<function><type><name>void</name></type> <name>pbr</name><parameter_list>(<parameter><decl slice:decl="bc0ba02bab962d42c3d0b7024c4b6683321432e0"><type><name>int</name><modifier>&amp;</modifier></type> <name>r</name></decl></parameter>)</parameter_list> <block>{<block_content>
-    <expr_stmt><expr slice:def="bc0ba02bab962d42c3d0b7024c4b6683321432e0" slice:use="bc0ba02bab962d42c3d0b7024c4b6683321432e0"><name>r</name> <operator>=</operator> <literal type="number">40</literal></expr>;</expr_stmt>
+<function><type><name>void</name></type> <name>pbr</name><parameter_list>(<parameter><decl><type><name>int</name><modifier>&amp;</modifier></type> <name>r</name></decl></parameter>)</parameter_list> <block>{<block_content>
+    <expr_stmt><expr><name>r</name> <operator>=</operator> <literal type="number">40</literal></expr>;</expr_stmt>
 </block_content>}</block></function></unit>
