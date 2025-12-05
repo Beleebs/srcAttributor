@@ -12,7 +12,7 @@
 // SliceProfile Class Definitions 
 //
 
-SliceProfile::SliceProfile(std::string sliceName, int decl, std::string hash, std::vector<int> defs, std::vector<int> uses) {
+SliceProfile::SliceProfile(std::string sliceName, int decl, std::string hash, std::vector<std::pair<int, int>> defs, std::vector<std::pair<int, int>> uses) {
     sliceName_ = sliceName;
     declLine_ = decl;
     hash_ = hash;
@@ -20,12 +20,12 @@ SliceProfile::SliceProfile(std::string sliceName, int decl, std::string hash, st
     useLines_ = uses;
 }
 
-void SliceProfile::addDef(const int& line) {
-    defLines_.push_back(line);
+void SliceProfile::addDef(const int& line, const int& column) {
+    defLines_.push_back(std::make_pair(line, column));
 }
 
-void SliceProfile::addUse(const int& line) {
-    useLines_.push_back(line);
+void SliceProfile::addUse(const int& line, const int& column) {
+    useLines_.push_back(std::make_pair(line, column));
 }
 
 std::string SliceProfile::getName() const {
@@ -40,11 +40,11 @@ std::string SliceProfile::getHash() const {
     return hash_;
 }
 
-std::vector<int> SliceProfile::getDefs() const {
+std::vector<std::pair<int, int>> SliceProfile::getDefs() const {
     return defLines_;
 }
 
-std::vector<int> SliceProfile::getUses() const {
+std::vector<std::pair<int, int>> SliceProfile::getUses() const {
     return useLines_;
 }
 
@@ -54,12 +54,12 @@ void SliceProfile::print() const {
     std::cout << "Hash: " << hash_ << std::endl;
     std::cout << "Definition Lines: ";
     for (auto& line : defLines_) {
-        std::cout << line << " ";
+        std::cout << line.first << " (column: " << line.second << ")" << std::endl;
     }
     std::cout << std::endl;
     std::cout << "Use Lines: ";
     for (auto& line : useLines_) {
-        std::cout << line << " ";
+        std::cout << line.first << " (column: " << line.second << ")" << std::endl;
     }
     std::cout << std::endl;
 }
@@ -95,6 +95,28 @@ int getSliceDeclLine(std::string key) {
     return sliceLine;
 }
 
+// splices the line data into different pieces (line, column)
+std::pair<int, int> spliceLineData(json& j) {
+    std::cout << j << std::endl;
+    std::string s = to_string(j);
+    // std::cout << s << std::endl;
+    size_t colon = s.find(':');
+    if (colon == std::string::npos) {
+        // Handle error: return a default value or throw with a clear message
+        std::cout << "colon = npos" << std::endl;
+        return std::make_pair(-1, -1);
+    }
+    try {
+        int first = std::stoi(s.substr(1, colon));
+        int second = std::stoi(s.substr(colon + 1, s.back() - 1));
+        return std::make_pair(first, second);
+    } catch (const std::invalid_argument&) {
+        // Handle error: return a default value or throw with a clear message
+        std::cout << "invalid argument: " << s << std::endl;
+        return std::make_pair(-1, -1);
+    }
+}
+
 // adds all the completed slice profiles to the vector<SliceProfile>
 void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
     // takes every object in json, adds them to vector of slices
@@ -102,7 +124,7 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
         std::string name = getSliceName(profile.key());
         int declLine = getSliceDeclLine(profile.key());
         std::string file, hashStr;
-        std::vector<int> defs, uses;
+        std::vector<std::pair<int, int>> defs, uses;
 
         // look for the def and uses
         json sliceJSON = profile.value();
@@ -134,14 +156,16 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
             // adds the def lines
             if (attribute == "definition") {
                 for (auto& line : value) {
-                    defs.push_back(line);
+                    // std::cout << line << std::endl;
+                    defs.push_back(spliceLineData(line));
                 }
             }
 
             // adds the use lines
             if (attribute == "use") {
                 for (auto& line : value) {
-                    uses.push_back(line);
+                    // std::cout << line << std::endl;
+                    uses.push_back(spliceLineData(line));
                 }
             }
         }

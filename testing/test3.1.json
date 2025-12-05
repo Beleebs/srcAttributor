@@ -1,0 +1,47 @@
+{
+"i-7-14-9ac83eee6a7f575aed4cd3a43667ab653837b2dc":{
+    "file":"testing/test3.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"main",
+    "type":"int",
+    "name":"i",
+    "initial":"7:14",
+    "dependence":[],
+    "aliases":[],
+    "calls":[],
+    "use":["7:21","7:28"],
+    "definition":["7:14","7:28"]
+},
+"y-6-9-9ac83eee6a7f575aed4cd3a43667ab653837b2dc":{
+    "file":"testing/test3.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"main",
+    "type":"int",
+    "name":"y",
+    "initial":"6:9",
+    "dependence":[],
+    "aliases":[],
+    "calls":[],
+    "use":["8:9","10:28"],
+    "definition":["6:9","8:9"]
+},
+"x-5-9-9ac83eee6a7f575aed4cd3a43667ab653837b2dc":{
+    "file":"testing/test3.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"main",
+    "type":"int",
+    "name":"x",
+    "initial":"5:9",
+    "dependence":[],
+    "aliases":[],
+    "calls":[],
+    "use":["7:25"],
+    "definition":["5:9"]
+}
+}

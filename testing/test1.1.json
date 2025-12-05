@@ -1,0 +1,32 @@
+{
+"y-5-9-deeea1ebdfc503661638a10a29bd33a1cf29a534":{
+    "file":"testing/test1.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"main",
+    "type":"int",
+    "name":"y",
+    "initial":"5:9",
+    "dependence":[],
+    "aliases":[],
+    "calls":[],
+    "use":["8:18"],
+    "definition":["5:9","6:5"]
+},
+"x-4-9-deeea1ebdfc503661638a10a29bd33a1cf29a534":{
+    "file":"testing/test1.cpp",
+    "language":"C++",
+    "namespace":[],
+    "class":"",
+    "function":"main",
+    "type":"int",
+    "name":"x",
+    "initial":"4:9",
+    "dependence":[{"y":"6:5"}],
+    "aliases":[],
+    "calls":[],
+    "use":["6:9","8:30"],
+    "definition":["4:9"]
+}
+}

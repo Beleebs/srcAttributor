@@ -22,8 +22,8 @@ public:
 
     // finds the xmlNodePtrs to different decl/expr statements
     xmlNodePtr findDecl(const SliceProfile& slice, xmlNodePtr start, const int& hintLine);
-    xmlNodePtr findUse(const SliceProfile& slice, xmlNodePtr start, const int& hintLine);
-    xmlNodePtr findDef(const SliceProfile& slice, xmlNodePtr start, const int& hintLine);
+    xmlNodePtr findUse(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn);
+    xmlNodePtr findDef(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn);
 
     // returns true if the slice's information is in the expr statement
     bool parseExpr (const SliceProfile& slice, xmlNodePtr exprStart, const char* type);
