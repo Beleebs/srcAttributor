@@ -17,11 +17,11 @@ using json = nlohmann::json;
 // usually will be gathered by json parsing.
 class SliceProfile {
 public:
-    SliceProfile() : sliceName_(""), declLine_(0), hash_(""), defLines_(), useLines_() {}
-    SliceProfile(std::string sliceName, int decl, std::string hash, std::vector<std::pair<int, int>> defs, std::vector<std::pair<int, int>> uses);
+    SliceProfile() : sliceName_(""), declLine_(), hash_(""), defLines_(), useLines_() {}
+    SliceProfile(std::string sliceName, std::pair<int, int> decl, std::string hash, std::vector<std::pair<int, int>> defs, std::vector<std::pair<int, int>> uses);
 
-    void setName(const std::string& name)   {sliceName_ = name;}
-    void setDecl(const int& line)           {declLine_ = line;}
+    void setName(const std::string& name)                   {sliceName_ = name;}
+    void setDecl(std::pair<int, int> line)                  {declLine_ = line;}
     void setDefs(std::vector<std::pair<int, int>> lines)    {defLines_ = lines;} 
     void setUses(std::vector<std::pair<int, int>> lines)    {useLines_ = lines;}
 
@@ -29,7 +29,7 @@ public:
     void addUse(const int& line, const int& column);
 
     std::string getName() const;
-    int getDecl() const;
+    std::pair<int, int> getDecl() const;
     std::string getHash() const;
     std::vector<std::pair<int, int>> getDefs() const;
     std::vector<std::pair<int, int>> getUses() const;
@@ -44,7 +44,7 @@ private:
     // Name (string)
     std::string sliceName_;
     // Decl (line number)
-    int declLine_;
+    std::pair<int, int> declLine_;
     // attribute hash
     std::string hash_;
     // Defs (line number, column)
@@ -54,7 +54,7 @@ private:
 };
 
 std::string getSliceName(std::string);
-int getSliceDeclLine(std::string);
+std::pair<int, int> getSliceDeclLine(std::string);
 void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices);
 std::pair<int, int> spliceLineData(json& j);
 

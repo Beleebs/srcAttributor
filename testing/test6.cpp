@@ -19,11 +19,9 @@ int sumNumbers(int n) {
 
 int main() {
     int num = 5;
-    
+
     std::cout << "Printing numbers up to " << num << ": ";
     printNumbers(num);
-    
+
     std::cout << "Sum of numbers up to " << num << ": " << sumNumbers(num) << std::endl;
-              
-    return 0;
 }

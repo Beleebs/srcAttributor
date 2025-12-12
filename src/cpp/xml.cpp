@@ -28,202 +28,201 @@ xmlNodePtr findDeclParent(xmlNodePtr location) {
     return nullptr;
 }
 
-// recursive content finder
-std::vector<std::string> getContents(xmlNodePtr parent) {
-    std::vector<std::string> result;
-    for (xmlNodePtr current = parent; current; current = current->next) {
-        // If the node is a text node, add its content
-        if (current->type == XML_TEXT_NODE) {
-            std::string content = (const char*)xmlNodeGetContent(current);
-            if (!content.empty()) {
-                result.push_back(content);
-            }
-        }
-        // If the node is an element node, recursively get contents from its children
-        if (current->type == XML_ELEMENT_NODE && current->children) {
-            std::vector<std::string> childContents = getContents(current->children);
-            result.insert(result.end(), childContents.begin(), childContents.end());
-        }
-    }
-    return result;
-}
+xmlNodePtr SliceProfileHandler::findDecl(const SliceProfile &slice, xmlNodePtr start, const int &hintLine, const int& hintColumn) {
 
-// checks to see if the expr location is a conditional
-// has to do with a wacky thing where assignment CAN be used in the conditional *sigh*
-bool checkConditional(xmlNodePtr location) {
-    std::vector<std::string> contents = getContents(location);
-    if (location->parent && xmlStrcmp(location->parent->name, (const xmlChar*)"condition") == 0) {
-        for (auto c : contents) {
-            if (c == "= " || c == "=") {
-                return false;
-            }
-        }
-        return true;
-    }
-    return false;
-}
+    // BFS search
+    // check start node
+    // if decl, run operation
+    // if not,
+    //      check children, if not found, move next/
 
-bool SliceProfileHandler::parseExpr(const SliceProfile &slice, xmlNodePtr exprStart, const char* type) {
-    // starts on an expr statement, outputs the contents of expr
-    const char* sliceName = slice.getName().c_str();
-    for (xmlNodePtr current = exprStart; current; current = current->next) {
-        // problem found. this stupid line right here
-        std::vector<std::string> contents = getContents(exprStart);
-        for(auto str : contents) {
-            if (xmlStrcmp((const xmlChar*)sliceName, (const xmlChar*)str.c_str()) == 0) {
-                // std::cout << "true: parseExpr(" << type << ") = " << str << std::endl;
-                // this checks to see if the expr is in a <decl>
-                // if it is inside a decl, then place the stuff in decl instead!!!! BOOOOOOOOOOM!!!!!!!
-                xmlNodePtr parentDecl = findDeclParent(exprStart);
-                if (parentDecl) {
-                    addAttribute(slice, parentDecl, type);
-                }
-                else {
-                    addAttribute(slice, exprStart, type);
-                }
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool SliceProfileHandler::parseDecl(const SliceProfile &slice, xmlNodePtr declStart, const char* type) {
-    // starts on a decl statement, outputs the contents of decl
-    const char* sliceName = slice.getName().c_str();
-    for (xmlNodePtr current = declStart; current; current = current->next) {
-        const xmlChar* content = xmlNodeGetContent(current);
-        if (xmlStrcmp((const xmlChar*)sliceName, content) == 0) {
-            // std::cout << "true: parseDecl() = " << content << std::endl;
-            addAttribute(slice, declStart->parent, type);
-            return true;
-        }
-        this->parseDecl(slice, current->children, type);
-    }
-    return false;
-}
-
-xmlNodePtr SliceProfileHandler::findDecl(const SliceProfile &slice, xmlNodePtr start, const int &hintLine)
-{
     // starts at the beginning of the file
-    for (xmlNodePtr current = start; current; current = current->next) {
-        if (current->type == XML_ELEMENT_NODE) {
-            // decl hit
-            if (xmlStrcmp(current->name, (const xmlChar*)"decl") == 0 ) {
-                // parse the decl
-                // std::cout << "decl found on line: " << current->line << std::endl;
-                // if the decl is part of the slice/where the slice is declared, return current
-                if (this->parseDecl(slice, current, "decl") == true) {
+    if (!start) {
+        return nullptr;
+    }
+
+    xmlNodePtr current = start;
+    std::cout << current->name << std::endl;
+
+    while (current) {
+        // if node is decl, get ns and look for position attributes
+        if (xmlStrcmp(current->name, (const xmlChar*)"decl") == 0) {
+            // create ns ptr to the position namespace
+            xmlNsPtr posNs = xmlSearchNs(current->doc, current, (const xmlChar*)"pos");
+            if (!posNs) { 
+                std::cout << "Position namespace not found." << std::endl; 
+                return nullptr;
+            }
+            // std::cout << "Got the namespace: " << posNs->href << std::endl;
+
+            // std::cout << "In Loop..." << std::endl;
+            // decl hit, check to see if it matches slice information
+            // std::cout << "In Loop, found node..." << std::endl;
+            if (xmlStrcmp(current->name, (const xmlChar *)"decl") == 0 && xmlGetLineNo(current) == hintLine + 1) {
+                // get the current node's pos:begin and end values
+                std::cout << "Found " << current->name << " at line: " << xmlGetLineNo(current) << "... Before getting NsProps" << std::endl;
+
+                auto beginValue = xmlGetNsProp(current, (const xmlChar*)"start", posNs->href);
+                auto endValue = xmlGetNsProp(current, (const xmlChar*)"end", posNs->href);
+
+                if (!beginValue || !endValue) {
+                    std::cout << "start/end value null" << std::endl;
+                    return nullptr;
+                }
+
+                std::cout << "Begin Value: " << beginValue << std::endl;
+                std::cout << "End Value: " << endValue << std::endl;
+                std::cout << "After getting NsProps, getting json data" << std::endl;
+                json b = {(const char *)beginValue}, e = {(const char *)endValue};
+
+                std::cout << "json made, splicing line data" << std::endl;
+                std::pair<int, int> beginPair = spliceLineData(b);
+                std::pair<int, int> endPair = spliceLineData(e);
+
+                std::cout << "beginPair/endPair good!" << std::endl;
+                std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
+                std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
+
+                if (hintColumn >= beginPair.second && hintColumn <= endPair.second) {
+                    std::cout << "hintColumn meets the requirements. mods, place it on line " << hintLine + 1 << std::endl;
+                    addAttribute(slice, current, "decl");
                     return current;
                 }
             }
         }
-        // Recurse into children
-        xmlNodePtr result = this->findDecl(slice, current->children, hintLine);
-        if (result != nullptr) {
-            return result;
+        // if node is not decl, search children, then search next.
+        else {
+            if (current->children) {
+                xmlNodePtr result = this->findDecl(slice, current->children, hintLine, hintColumn);
+                if (result != nullptr) {
+                    return result;
+                }
+            }
         }
+        current = current->next;
     }
+
     // if decl not found, return nullptr
     return nullptr;
 }
 
 xmlNodePtr SliceProfileHandler::findUse(const SliceProfile &slice, xmlNodePtr start, const int &hintLine, const int &hintColumn) {
-    // starts at the beginning of the file
-    for (xmlNodePtr current = start; current; current = current->next) {
-        if (current->type == XML_ELEMENT_NODE) {
-            // std::cout << "expr " << hintLine << std::endl;
+    if (!start) {
+        return nullptr;
+    }
+    xmlNodePtr current = start;
 
-            // get the pos:start value
+    while (current) {
+        if (xmlStrcmp(current->name, (const xmlChar*)"expr") == 0) {
             xmlNsPtr posNs = xmlSearchNs(current->doc, current, (const xmlChar*)"pos");
-
-            // decl hit
-            if ((xmlStrcmp(current->name, (const xmlChar*)"decl") == 0 && xmlGetLineNo(current) == hintLine + 1)) {
-                auto v = xmlGetNsProp(current, (const xmlChar*)"end", posNs->href);
-                std::string posValue = "\"" + std::string((const char*)v) + "\"";
-                    
-                // convert to int pair
-                json j = {posValue};
-                auto posPair = spliceLineData(j);
-                std::cout << posPair.second << std::endl;
-
-                if (this->parseDecl(slice, current, "use") && posPair.second <= hintColumn) {
-                    return current;
-                }                
+            if (!posNs) { 
+                std::cout << "Position namespace not found." << std::endl; 
+                return nullptr;
             }
-            // expr hit
-            if ((xmlStrcmp(current->name, (const xmlChar*)"expr") == 0 && xmlGetLineNo(current) == hintLine + 1))   {
-                std::cout << "attempting parseExpr with element " << current->name << ": ";// << std::endl;
 
-                auto v = xmlGetNsProp(current, (const xmlChar*)"end", posNs->href);
-                std::string posValue = (const char*)v;
-                std::cout << posValue << std::endl;
-                    
-                // convert to int pair
-                json j = posValue;
-                auto posPair = spliceLineData(j);
-                std::cout << posPair.second << std::endl;
+            if (xmlGetLineNo(current) == hintLine + 1) {
+                // get the current node's pos:begin and end values
+                auto beginValue = xmlGetNsProp(current, (const xmlChar*)"start", posNs->href);
+                auto endValue = xmlGetNsProp(current, (const xmlChar*)"end", posNs->href);
+                json b = {(const char*)beginValue}, e = {(const char*)endValue};
+                std::pair<int, int> beginPair = spliceLineData(b);
+                std::pair<int, int> endPair = spliceLineData(e);
 
-                if (this->parseExpr(slice, current, "use") == true && posPair.second <= hintColumn) {
-                    std::cout << "success " << current->line << std::endl;
+                // std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
+                // std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
+
+                if (hintColumn >= beginPair.second && hintColumn <= endPair.second) {
+                    // std::cout << "It works for findUse (expr). INSERT!!!!" << std::endl;
+                    addAttribute(slice, current, "use");
                     return current;
-                }
-                else {
-                    std::cout << "fail" << std::endl;
                 }
             }
         }
-        this->findUse(slice, current->children, hintLine, hintColumn);
+        else if (xmlStrcmp(current->name, (const xmlChar*)"decl") == 0) {
+            xmlNsPtr posNs = xmlSearchNs(current->doc, current, (const xmlChar*)"pos");
+            if (!posNs) { 
+                std::cout << "Position namespace not found." << std::endl; 
+                return nullptr;
+            }
+
+            if (xmlGetLineNo(current) == hintLine + 1) {
+                // get the current node's pos:begin and end values
+                auto beginValue = xmlGetNsProp(current, (const xmlChar*)"start", posNs->href);
+                auto endValue = xmlGetNsProp(current, (const xmlChar*)"end", posNs->href);
+                json b = {(const char*)beginValue}, e = {(const char*)endValue};
+                std::pair<int, int> beginPair = spliceLineData(b);
+                std::pair<int, int> endPair = spliceLineData(e);
+
+                // std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
+                // std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
+
+                if (hintColumn >= beginPair.second && hintColumn <= endPair.second) {
+                    // std::cout << "It works for findUse (decl). INSERT!!!!" << std::endl;
+                    addAttribute(slice, current, "use");
+                    return current;
+                }
+            }
+        }
+        else {
+            if (current->children) {
+                xmlNodePtr result = findUse(slice, current->children, hintLine, hintColumn);
+                if (result != nullptr) {
+                    return result;
+                }
+            }
+        }
+        current = current->next;
     }
     return nullptr;
 }
 
 xmlNodePtr SliceProfileHandler::findDef(const SliceProfile &slice, xmlNodePtr start, const int &hintLine, const int &hintColumn) {
-    // starts at the beginning of the file
-    for (xmlNodePtr current = start; current; current = current->next) {
-        if (current->type == XML_ELEMENT_NODE) {
-            // std::cout << "decl" << hintLine << std::endl;
-            // decl hit, skip
-            if (xmlStrcmp(current->name, (const xmlChar*)"decl") == 0) {
-                break;
+    if (!start) {
+        return nullptr;
+    }
+    xmlNodePtr current = start;
+
+    while (current) {
+        if (xmlStrcmp(current->name, (const xmlChar*)"expr") == 0) {
+            xmlNsPtr posNs = xmlSearchNs(current->doc, current, (const xmlChar*)"pos");
+            if (!posNs) { 
+                // std::cout << "Position namespace not found." << std::endl; 
+                return nullptr;
             }
-            // expr hit
-            if (xmlStrcmp(current->name, (const xmlChar*)"expr") == 0 && xmlGetLineNo(current) == hintLine + 1) {
-                std::cout << "attempting parseExpr with element " << current->name << ": ";// << std::endl;
-                
-                // THIS IS A HORRID SOLUTION.
-                // BY NO MEANS IS THIS EFFICIENT,
-                // BUT IT WORKS.
 
-                // get the pos:start value
-                xmlNsPtr posNs = xmlSearchNs(current->doc, current, (const xmlChar*)"pos");
-                auto v = xmlGetNsProp(current, (const xmlChar*)"start", posNs->href);
-                std::string posValue = (const char*)v;
-                
-                // convert to int pair
-                json j = {posValue};
-                auto posPair = spliceLineData(j);
+            if (xmlGetLineNo(current) == hintLine + 1) {
+                // get the current node's pos:begin and end values
+                auto beginValue = xmlGetNsProp(current, (const xmlChar*)"start", posNs->href);
+                auto endValue = xmlGetNsProp(current, (const xmlChar*)"end", posNs->href);
+                json b = {(const char*)beginValue}, e = {(const char*)endValue};
+                std::pair<int, int> beginPair = spliceLineData(b);
+                std::pair<int, int> endPair = spliceLineData(e);
 
-                // compare columns
-                if (posPair.second == hintColumn) {
-                    if (this->parseExpr(slice, current, "def")) {
-                        std::cout << "success " << current->line << std::endl;
-                        return current;
-                    }
-                    else {
-                        std::cout << "fail " << std::endl;
-                    }
-                }
-                else {
-                    std::cout << "Failed hint column check" << std::endl;
+                // std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
+                // std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
+
+                if (hintColumn >= beginPair.second && hintColumn <= endPair.second) {
+                    // std::cout << "IT WORKS FOR DEF!!" << std::endl;
+                    addAttribute(slice, current, "def");
+                    return current;
                 }
             }
         }
-        this->findDef(slice, current->children, hintLine, hintColumn);
+        else {
+            if (current->children) {
+                xmlNodePtr result = findDef(slice, current->children, hintLine, hintColumn);
+                if (result != nullptr) {
+                    return result;
+                }
+            }
+        }
+        current = current->next;
     }
+    
     return nullptr;
 }
 
+// adds the attribute at a location
 xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const char* attType) {
     xmlNsPtr xmlNamespace = xmlSearchNs(location->doc, location, (const xmlChar*)"slice");
     std::string hash = slice.getHash();
@@ -242,6 +241,11 @@ xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const ch
             // if the node already has a def, concatenate
             if (xmlHasNsProp(location, (const xmlChar *)"def", xmlNamespace->href) != NULL) {
                 const xmlChar *oldValue = xmlGetNsProp(location, (const xmlChar *)"def", xmlNamespace->href);
+                // checks to see if the hash is already present
+                if (containsHash(oldValue, hash)) {
+                    // dont put in the new hash
+                    return location;
+                }
                 hash = hash + " " + std::string((const char *)oldValue);
                 xmlSetNsProp(location, xmlNamespace, (const xmlChar *)"def", (const xmlChar *)hash.c_str());
                 return location;
@@ -298,6 +302,7 @@ xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const ch
     return location;
 }
 
+// used in checking if a hash is already present within an attribute's
 bool containsHash(const xmlChar* attributeValue, std::string hash) {
     std::string valueString = (const char*)attributeValue;
     std::vector<std::string> hashes;
@@ -335,26 +340,29 @@ void insertAttributes(SliceProfileHandler& slices, std::string xmlFileName) {
     if (xmlSearchNs(doc, nsRoot, (const xmlChar*)"slice") == NULL) {
         xmlNewNs(nsRoot, (const xmlChar*)"http://www.srcML.org/srcML/slice", (const xmlChar*)"slice");
     }
+    std::cout << "Made Ns namespace" << std::endl;
 
     for (const auto& sp : slices.profiles_) {
         // step 1: decl elements
-        // std::cout << "Slice Profile: " << sp.getName() << std::endl;
+        std::cout << "Slice Profile: " << sp.getName() << std::endl;
         
         // gets root element
         xmlNodePtr root = xmlDocGetRootElement(doc);
         // finds decl line
-        int decl = sp.getDecl();
-        slices.findDecl(sp, root, decl);
+        std::cout << "trying findDecl" << std::endl;
+        slices.findDecl(sp, root, sp.getDecl().first, sp.getDecl().second);
         
         // step 2: defs
         for (const auto& def : sp.getDefs()) {
             root = xmlDocGetRootElement(doc);
+            std::cout << "trying findDef for " << sp.getName() << std::endl;
             slices.findDef(sp, root, def.first, def.second);
         }
 
         // step 3: uses
         for (const auto& use : sp.getUses()) {
             root = xmlDocGetRootElement(doc);
+            std::cout << "trying findUse for " << sp.getName() << std::endl;
             slices.findUse(sp, root, use.first, use.second);
         }
     }

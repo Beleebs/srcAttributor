@@ -12,7 +12,7 @@
 // SliceProfile Class Definitions 
 //
 
-SliceProfile::SliceProfile(std::string sliceName, int decl, std::string hash, std::vector<std::pair<int, int>> defs, std::vector<std::pair<int, int>> uses) {
+SliceProfile::SliceProfile(std::string sliceName, std::pair<int, int> decl, std::string hash, std::vector<std::pair<int, int>> defs, std::vector<std::pair<int, int>> uses) {
     sliceName_ = sliceName;
     declLine_ = decl;
     hash_ = hash;
@@ -32,7 +32,7 @@ std::string SliceProfile::getName() const {
     return sliceName_;
 }
 
-int SliceProfile::getDecl() const {
+std::pair<int, int> SliceProfile::getDecl() const {
     return declLine_;
 }
 
@@ -50,14 +50,14 @@ std::vector<std::pair<int, int>> SliceProfile::getUses() const {
 
 // prints out slice profile data (neatly)
 void SliceProfile::print() const {
-    std::cout << "Slice: " << sliceName_ << " | Declared on Line: " << declLine_ << std::endl;
+    std::cout << "Slice: " << sliceName_ << ", Declared on Line: " << declLine_.first << " (column: " << declLine_.second << ")" << std::endl;
     std::cout << "Hash: " << hash_ << std::endl;
-    std::cout << "Definition Lines: ";
+    std::cout << "Definition Lines: " << std::endl;
     for (auto& line : defLines_) {
         std::cout << line.first << " (column: " << line.second << ")" << std::endl;
     }
     std::cout << std::endl;
-    std::cout << "Use Lines: ";
+    std::cout << "Use Lines: " << std::endl;
     for (auto& line : useLines_) {
         std::cout << line.first << " (column: " << line.second << ")" << std::endl;
     }
@@ -84,30 +84,37 @@ std::string getSliceName(std::string key) {
 
 // returns decl line number
 // gets the slice name, sets as a start for substr, goes until next '-'
-int getSliceDeclLine(std::string key) {
+std::pair<int, int> getSliceDeclLine(std::string key) {
     // Gets the index of the slice name's final character
     std::string sliceName = getSliceName(key);
-    int strStart = sliceName.length() + 1;
+    int lineStart = sliceName.length() + 1;
 
     // creates substring starting at the index after the first '-' (the decl line number) 
-    std::string sliceLineStr = getSliceName(key.substr(strStart, key.length()));
-    int sliceLine = std::stoi(sliceLineStr);
-    return sliceLine;
+    std::string sliceLineStr = getSliceName(key.substr(lineStart, key.length()));
+
+    // look for the column using a column start value (+2 is for the 2 hyphens)
+    int columnStart = sliceName.length() + sliceLineStr.length() + 2;
+    std::string sliceColumnStr = getSliceName(key.substr(columnStart, key.length()));
+
+    // return the created pair of line and column
+    return std::make_pair(std::stoi(sliceLineStr), std::stoi(sliceColumnStr));
 }
 
 // splices the line data into different pieces (line, column)
 std::pair<int, int> spliceLineData(json& j) {
-    std::cout << j << std::endl;
+    // std::cout << j << std::endl;
     std::string s = to_string(j);
     // std::cout << s << std::endl;
+    size_t quotes = s.find('"');
     size_t colon = s.find(':');
+
     if (colon == std::string::npos) {
         // Handle error: return a default value or throw with a clear message
         std::cout << "colon = npos" << std::endl;
         return std::make_pair(-1, -1);
     }
     try {
-        int first = std::stoi(s.substr(1, colon));
+        int first = std::stoi(s.substr(quotes + 1, colon));
         int second = std::stoi(s.substr(colon + 1, s.back() - 1));
         return std::make_pair(first, second);
     } catch (const std::invalid_argument&) {
@@ -122,7 +129,7 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
     // takes every object in json, adds them to vector of slices
     for (auto& profile : j.items()) {
         std::string name = getSliceName(profile.key());
-        int declLine = getSliceDeclLine(profile.key());
+        std::pair<int, int> declLine = getSliceDeclLine(profile.key());
         std::string file, hashStr;
         std::vector<std::pair<int, int>> defs, uses;
 
@@ -138,7 +145,7 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
                 file = value;
 
                 // converts into single hash-able string
-                std::string declLineString = std::to_string(declLine);
+                std::string declLineString = std::to_string(declLine.first);
                 std::string input = name + declLineString + file;
 
                 // hash it

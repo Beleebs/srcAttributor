@@ -37,6 +37,10 @@ int main(int argc, char** argv) {
 
     // Gets all slice profiles from the json, pushes into slices
     getSliceProfiles(j, slices);
+    // debug print
+    for (auto& s : slices) {
+        s.print();
+    }
 
     // EXECUTE XML PHASE!!!!!!!!!!
     SliceProfileHandler sph(slices);

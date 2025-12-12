@@ -21,7 +21,7 @@ public:
     void print() const;
 
     // finds the xmlNodePtrs to different decl/expr statements
-    xmlNodePtr findDecl(const SliceProfile& slice, xmlNodePtr start, const int& hintLine);
+    xmlNodePtr findDecl(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn);
     xmlNodePtr findUse(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn);
     xmlNodePtr findDef(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn);
 
