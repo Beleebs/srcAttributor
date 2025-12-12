@@ -14,20 +14,6 @@ void SliceProfileHandler::print() const {
         e.print();
 }
 
-// used to find the location of a parent decl element, if it exists.
-xmlNodePtr findDeclParent(xmlNodePtr location) {
-    if (!location) {
-        return nullptr;
-    }
-    if (xmlStrcmp(location->name, (const xmlChar*)"decl") == 0) {
-        return location;
-    }
-    if (location->parent) {
-        return findDeclParent(location->parent);
-    }
-    return nullptr;
-}
-
 xmlNodePtr SliceProfileHandler::findDecl(const SliceProfile &slice, xmlNodePtr start, const int &hintLine, const int& hintColumn) {
 
     // BFS search
@@ -42,7 +28,7 @@ xmlNodePtr SliceProfileHandler::findDecl(const SliceProfile &slice, xmlNodePtr s
     }
 
     xmlNodePtr current = start;
-    std::cout << current->name << std::endl;
+    // std::cout << current->name << std::endl;
 
     while (current) {
         // if node is decl, get ns and look for position attributes
@@ -60,7 +46,7 @@ xmlNodePtr SliceProfileHandler::findDecl(const SliceProfile &slice, xmlNodePtr s
             // std::cout << "In Loop, found node..." << std::endl;
             if (xmlStrcmp(current->name, (const xmlChar *)"decl") == 0 && xmlGetLineNo(current) == hintLine + 1) {
                 // get the current node's pos:begin and end values
-                std::cout << "Found " << current->name << " at line: " << xmlGetLineNo(current) << "... Before getting NsProps" << std::endl;
+                // std::cout << "Found " << current->name << " at line: " << xmlGetLineNo(current) << "... Before getting NsProps" << std::endl;
 
                 auto beginValue = xmlGetNsProp(current, (const xmlChar*)"start", posNs->href);
                 auto endValue = xmlGetNsProp(current, (const xmlChar*)"end", posNs->href);
@@ -80,8 +66,8 @@ xmlNodePtr SliceProfileHandler::findDecl(const SliceProfile &slice, xmlNodePtr s
                 std::pair<int, int> endPair = spliceLineData(e);
 
                 std::cout << "beginPair/endPair good!" << std::endl;
-                std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
-                std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
+                // std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
+                // std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
 
                 if (hintColumn >= beginPair.second && hintColumn <= endPair.second) {
                     std::cout << "hintColumn meets the requirements. mods, place it on line " << hintLine + 1 << std::endl;
@@ -350,20 +336,28 @@ void insertAttributes(SliceProfileHandler& slices, std::string xmlFileName) {
         xmlNodePtr root = xmlDocGetRootElement(doc);
         // finds decl line
         std::cout << "trying findDecl" << std::endl;
-        slices.findDecl(sp, root, sp.getDecl().first, sp.getDecl().second);
+        if (slices.findDecl(sp, root, sp.getDecl().first, sp.getDecl().second)) {
+            std::cout << "findDecl for " << sp.getName() << " success." << std::endl;
+        }
         
         // step 2: defs
         for (const auto& def : sp.getDefs()) {
             root = xmlDocGetRootElement(doc);
             std::cout << "trying findDef for " << sp.getName() << std::endl;
-            slices.findDef(sp, root, def.first, def.second);
+            if (!slices.findDef(sp, root, def.first, def.second)) {
+                std::cout << "findDef did not work for: " << def.first << ", " << def.second << std::endl;
+                if (def.first == sp.getDecl().first && def.second == sp.getDecl().second) 
+                    std::cout << "Reason: Same as decl line" << std::endl;
+            }
         }
 
         // step 3: uses
         for (const auto& use : sp.getUses()) {
             root = xmlDocGetRootElement(doc);
             std::cout << "trying findUse for " << sp.getName() << std::endl;
-            slices.findUse(sp, root, use.first, use.second);
+            if (!slices.findUse(sp, root, use.first, use.second)) {
+                std::cout << "findUse did not work for: " << use.first << ", " << use.second << std::endl;
+            }
         }
     }
 
