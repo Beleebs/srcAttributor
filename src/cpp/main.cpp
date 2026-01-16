@@ -11,13 +11,16 @@ int main(int argc, char** argv) {
 
     // setup CLI11 Command line input
     std::string inputFile = "", outputFile = "";
+    bool showSlices = false;
     CLI::App app{"srcAttributor (srcSlice addon)"};
     app.add_option("-i, --input", inputFile, "Name of JSON input file.")
         ->required()
         ->type_name("");
-    app.add_option("-o, --output", outputFile, "Name of the srcML file to write into")
+    app.add_option("-o, --output", outputFile, "Name of the srcML file to write into.")
         ->required()
         ->type_name("");
+    app.add_flag("-s, --slices", showSlices, "(Optional) Displays used slice profiles with attribute information.");
+    
 
     CLI11_PARSE(app, argc, argv);
 
@@ -38,8 +41,10 @@ int main(int argc, char** argv) {
     // Gets all slice profiles from the json, pushes into slices
     getSliceProfiles(j, slices);
     // debug print
-    for (auto& s : slices) {
-        s.print();
+    if (showSlices) {
+        for (auto& s : slices) {
+            s.print();
+        }
     }
 
     // EXECUTE XML PHASE!!!!!!!!!!

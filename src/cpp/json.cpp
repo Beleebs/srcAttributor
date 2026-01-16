@@ -28,6 +28,7 @@ void SliceProfile::addUse(const int& line, const int& column) {
     useLines_.push_back(std::make_pair(line, column));
 }
 
+
 std::string SliceProfile::getName() const {
     return sliceName_;
 }
@@ -173,6 +174,15 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
                 for (auto& line : value) {
                     // std::cout << line << std::endl;
                     uses.push_back(spliceLineData(line));
+                }
+            }
+
+            // references
+            if (attribute == "dependence") {
+                for (auto& ref : value) {
+                    for (auto& item : ref.items()) {
+                        //std::cout << item.key() << std::endl;
+                    }
                 }
             }
         }
