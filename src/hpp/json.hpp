@@ -13,49 +13,68 @@
 
 using json = nlohmann::json;
 
+// Slice appearance 
+// can be used for decl/def/use
+
+class SliceLine {
+public:
+    SliceLine() : row_(), column_(), fileName_("") {}
+    SliceLine(int r, int c, std::string f="");
+
+    std::string getFile() const {return fileName_;}
+    std::pair<int, int> getLine() const {return std::make_pair(row_, column_);}
+    void setFile(std::string s) {fileName_ = s;}
+
+private:
+    int row_;
+    int column_;
+    std::string fileName_;
+};
+
 // Holds slice profile information.
 // usually will be gathered by json parsing.
 class SliceProfile {
 public:
-    SliceProfile() : sliceName_(""), declLine_(), hash_(""), defLines_(), useLines_() {}
-    SliceProfile(std::string sliceName, std::pair<int, int> decl, std::string hash, std::vector<std::pair<int, int>> defs, std::vector<std::pair<int, int>> uses);
+    SliceProfile() : sliceName_(""), fileName_(""), declLine_(), hash_(""), defLines_(), useLines_(){}
+    SliceProfile(std::string& sliceName, std::string& fileName, SliceLine* decl, std::string& hash, std::vector<SliceLine*> defs, std::vector<SliceLine*> uses);
 
-    void setName(const std::string& name)                   {sliceName_ = name;}
-    void setDecl(std::pair<int, int> line)                  {declLine_ = line;}
-    void setDefs(std::vector<std::pair<int, int>> lines)    {defLines_ = lines;} 
-    void setUses(std::vector<std::pair<int, int>> lines)    {useLines_ = lines;}
+    void setName(const std::string& name)           {sliceName_ = name;}
+    void setDecl(SliceLine* line)                   {declLine_ = line;}
+    void setDefs(std::vector<SliceLine*> lines)     {defLines_ = lines;} 
+    void setUses(std::vector<SliceLine*> lines)     {useLines_ = lines;}
 
-    void addDef(const int& line, const int& column);
-    void addUse(const int& line, const int& column);
+    void addDef(SliceLine* s);
+    void addUse(SliceLine* s);
 
     std::string getName() const;
-    std::pair<int, int> getDecl() const;
+    std::string getFile() const;
+    SliceLine* getDecl() const;
     std::string getHash() const;
-    std::vector<std::pair<int, int>> getDefs() const;
-    std::vector<std::pair<int, int>> getUses() const;
+    std::vector<SliceLine*> getDefs() const;
+    std::vector<SliceLine*> getUses() const;
 
     void print() const;
 
 private:
-    // needs overhauled, since position:column is now a thing
-    // pairs?
-    // std::vector<std::pair<int, int>> defLines_
-
-    // Name (string)
+    // slice name (string)
     std::string sliceName_;
-    // Decl (line number)
-    std::pair<int, int> declLine_;
+    // originating file (string) 
+    std::string fileName_;
+    // declaration line
+    SliceLine* declLine_;
     // attribute hash
     std::string hash_;
-    // Defs (line number, column)
-    std::vector<std::pair<int, int>> defLines_;
-    // Uses (line number, column)
-    std::vector<std::pair<int, int>> useLines_;
+    // lines where slice is (re)defined
+    std::vector<SliceLine*> defLines_;
+    // lines where slice is used
+    std::vector<SliceLine*> useLines_;
+
 };
 
 std::string getSliceName(std::string);
-std::pair<int, int> getSliceDeclLine(std::string);
+SliceLine* getSliceDeclLine(std::string);
 void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices);
 std::pair<int, int> spliceLineData(json& j);
+SliceLine* returnLineData(json& j);
 
 #endif // SLICE_JSON_HPP

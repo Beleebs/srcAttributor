@@ -21,15 +21,9 @@ public:
     void print() const;
 
     // finds the xmlNodePtrs to different decl/expr statements
-    xmlNodePtr findDecl(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn);
-    xmlNodePtr findUse(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn);
-    xmlNodePtr findDef(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn);
-
-    // returns true if the slice's information is in the expr statement
-    bool parseExpr (const SliceProfile& slice, xmlNodePtr exprStart, const char* type);
-
-    // returns true if the slice's information matches with the content found in the decl element
-    bool parseDecl (const SliceProfile& slice, xmlNodePtr declStart, const char* type);
+    xmlNodePtr findDecl(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn, const std::string& hintFile);
+    xmlNodePtr findUse(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn, const std::string& hintFile);
+    xmlNodePtr findDef(const SliceProfile& slice, xmlNodePtr start, const int& hintLine, const int& hintColumn, const std::string& hintFile);
 
     // inserts attributes found from findDecl/Use/Def
     friend void insertAttributes(SliceProfileHandler& ptrLocations, std::string xmlFileName);
@@ -43,5 +37,8 @@ xmlNodePtr addAttribute(const SliceProfile& slice, xmlNodePtr location, const ch
 
 // checks for hash appearance in a const xmlChar*
 bool containsHash(const xmlChar* attributeValue, std::string hash);
+
+// finds the filename the parser is currently in
+std::string findFileName(xmlNodePtr current);
 
 #endif // SLICE_XML_HPP

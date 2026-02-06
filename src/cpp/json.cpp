@@ -12,28 +12,32 @@
 // SliceProfile Class Definitions 
 //
 
-SliceProfile::SliceProfile(std::string sliceName, std::pair<int, int> decl, std::string hash, std::vector<std::pair<int, int>> defs, std::vector<std::pair<int, int>> uses) {
+SliceProfile::SliceProfile(std::string& sliceName, std::string& fileName, SliceLine* decl, std::string& hash, std::vector<SliceLine*> defs, std::vector<SliceLine*> uses) {
     sliceName_ = sliceName;
+    fileName_ = fileName;
     declLine_ = decl;
     hash_ = hash;
     defLines_ = defs;
     useLines_ = uses;
 }
 
-void SliceProfile::addDef(const int& line, const int& column) {
-    defLines_.push_back(std::make_pair(line, column));
+void SliceProfile::addDef(SliceLine* s) {
+    defLines_.push_back(s);
 }
 
-void SliceProfile::addUse(const int& line, const int& column) {
-    useLines_.push_back(std::make_pair(line, column));
+void SliceProfile::addUse(SliceLine* s) {
+    useLines_.push_back(s);
 }
-
 
 std::string SliceProfile::getName() const {
     return sliceName_;
 }
 
-std::pair<int, int> SliceProfile::getDecl() const {
+std::string SliceProfile::getFile() const {
+    return fileName_;
+}
+
+SliceLine* SliceProfile::getDecl() const {
     return declLine_;
 }
 
@@ -41,26 +45,31 @@ std::string SliceProfile::getHash() const {
     return hash_;
 }
 
-std::vector<std::pair<int, int>> SliceProfile::getDefs() const {
+std::vector<SliceLine*> SliceProfile::getDefs() const {
     return defLines_;
 }
 
-std::vector<std::pair<int, int>> SliceProfile::getUses() const {
+std::vector<SliceLine*> SliceProfile::getUses() const {
     return useLines_;
+}
+
+SliceLine::SliceLine(int r, int c, std::string f) {
+    row_ = r;
+    column_ = c;
+    fileName_ = f;
 }
 
 // prints out slice profile data (neatly)
 void SliceProfile::print() const {
-    std::cout << "Slice: " << sliceName_ << ", Declared on Line: " << declLine_.first << " (column: " << declLine_.second << ")" << std::endl;
+    std::cout << "Slice: " << sliceName_ << " From File: " << fileName_ << ", Declared on Line: " << declLine_->getLine().first << " (column: " << declLine_->getLine().second << ")" << std::endl;
     std::cout << "Hash: " << hash_ << std::endl;
     std::cout << "Definition Lines: " << std::endl;
     for (auto& line : defLines_) {
-        std::cout << line.first << " (column: " << line.second << ")" << std::endl;
+        std::cout << "\t" << line->getFile() << ", row: " << line->getLine().first << " (column: " << line->getLine().second << ")" << std::endl;
     }
-    std::cout << std::endl;
     std::cout << "Use Lines: " << std::endl;
     for (auto& line : useLines_) {
-        std::cout << line.first << " (column: " << line.second << ")" << std::endl;
+        std::cout << "\t" << line->getFile() << ", row: " << line->getLine().first << " (column: " << line->getLine().second << ")" << std::endl;
     }
     std::cout << std::endl;
 }
@@ -85,20 +94,30 @@ std::string getSliceName(std::string key) {
 
 // returns decl line number
 // gets the slice name, sets as a start for substr, goes until next '-'
-std::pair<int, int> getSliceDeclLine(std::string key) {
+SliceLine* getSliceDeclLine(std::string key) {
     // Gets the index of the slice name's final character
     std::string sliceName = getSliceName(key);
     int lineStart = sliceName.length() + 1;
 
     // creates substring starting at the index after the first '-' (the decl line number) 
     std::string sliceLineStr = getSliceName(key.substr(lineStart, key.length()));
+    // std::cout << sliceLineStr << std::endl;
 
     // look for the column using a column start value (+2 is for the 2 hyphens)
     int columnStart = sliceName.length() + sliceLineStr.length() + 2;
     std::string sliceColumnStr = getSliceName(key.substr(columnStart, key.length()));
+    // std::cout << sliceColumnStr << std::endl;
 
     // return the created pair of line and column
-    return std::make_pair(std::stoi(sliceLineStr), std::stoi(sliceColumnStr));
+    try {
+        int row = std::stoi(sliceLineStr);
+        int col = std::stoi(sliceColumnStr);
+        return new SliceLine(row, col);
+    }
+    catch (const std::invalid_argument&) {
+        std::cout << "invalid argument in getSliceDeclLine." << std::endl;
+        return nullptr;
+    }
 }
 
 // splices the line data into different pieces (line, column)
@@ -118,10 +137,38 @@ std::pair<int, int> spliceLineData(json& j) {
         int first = std::stoi(s.substr(quotes + 1, colon));
         int second = std::stoi(s.substr(colon + 1, s.back() - 1));
         return std::make_pair(first, second);
-    } catch (const std::invalid_argument&) {
+    } 
+    catch (const std::invalid_argument&) {
         // Handle error: return a default value or throw with a clear message
         std::cout << "invalid argument: " << s << std::endl;
         return std::make_pair(-1, -1);
+    }
+}
+
+SliceLine* returnLineData(json& j) {
+    // std::cout << j << std::endl;
+    std::string s = to_string(j);
+    // std::cout << s << std::endl;
+    size_t quotes = s.find('"');
+    size_t colon1 = s.find(':');
+
+    if (colon1 == std::string::npos) {
+        // Handle error: return a default value or throw with a clear message
+        std::cout << "colon = npos" << std::endl;
+        return new SliceLine(-1, -1, "");
+    }
+    try {
+        size_t colon2 = s.find(':', colon1 + 1);
+        // std::cout << colon2 << std::endl;
+        std::string name = s.substr(quotes + 1, colon1 - 1);
+        int row = std::stoi(s.substr(colon1 + 1, colon2));
+        int col = std::stoi(s.substr(colon2 + 1, s.back() - 1));
+        // std::cout << "worked. " << row << ", " << col << ", " << name << std::endl;
+        return new SliceLine(row, col, name);
+    } catch (const std::invalid_argument&) {
+        // Handle error: return a default value or throw with a clear message
+        std::cout << "invalid argument: " << s << std::endl;
+        return new SliceLine(-1, -1, "");
     }
 }
 
@@ -130,11 +177,12 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
     // takes every object in json, adds them to vector of slices
     for (auto& profile : j.items()) {
         std::string name = getSliceName(profile.key());
-        std::pair<int, int> declLine = getSliceDeclLine(profile.key());
+        SliceLine* declLine = getSliceDeclLine(profile.key());
+        SliceLine* decl;
         std::string file, hashStr;
-        std::vector<std::pair<int, int>> defs, uses;
+        std::vector<SliceLine*> defs, uses;
 
-        // look for the def and uses
+        // look for the defs, uses, filename
         json sliceJSON = profile.value();
         for (auto& property : sliceJSON.items()) {
             std::string attribute = property.key();
@@ -146,7 +194,7 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
                 file = value;
 
                 // converts into single hash-able string
-                std::string declLineString = std::to_string(declLine.first);
+                std::string declLineString = std::to_string(declLine->getLine().first) + "-" + std::to_string(declLine->getLine().second);
                 std::string input = name + declLineString + file;
 
                 // hash it
@@ -161,11 +209,15 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
                 }
             }
 
+            if (attribute == "initial") {
+                decl = returnLineData(value);
+            }
+
             // adds the def lines
             if (attribute == "definition") {
                 for (auto& line : value) {
                     // std::cout << line << std::endl;
-                    defs.push_back(spliceLineData(line));
+                    defs.push_back(returnLineData(line));
                 }
             }
 
@@ -173,20 +225,20 @@ void getSliceProfiles(const json& j, std::vector<SliceProfile>& slices) {
             if (attribute == "use") {
                 for (auto& line : value) {
                     // std::cout << line << std::endl;
-                    uses.push_back(spliceLineData(line));
+                    uses.push_back(returnLineData(line));
                 }
             }
 
-            // references
-            if (attribute == "dependence") {
-                for (auto& ref : value) {
-                    for (auto& item : ref.items()) {
-                        //std::cout << item.key() << std::endl;
-                    }
-                }
-            }
+            // // references
+            // if (attribute == "dependence") {
+            //     for (auto& ref : value) {
+            //         for (auto& item : ref.items()) {
+            //             //std::cout << item.key() << std::endl;
+            //         }
+            //     }
+            // }
         }
-        SliceProfile s(name, declLine, hashStr, defs, uses);
+        SliceProfile s(name, file, decl, hashStr, defs, uses);
         slices.push_back(s);
     }
 }
