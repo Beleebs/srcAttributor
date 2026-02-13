@@ -65,11 +65,11 @@ void SliceProfile::print() const {
     std::cout << "Hash: " << hash_ << std::endl;
     std::cout << "Definition Lines: " << std::endl;
     for (auto& line : defLines_) {
-        std::cout << "\t" << line->getFile() << ", row: " << line->getLine().first << " (column: " << line->getLine().second << ")" << std::endl;
+        std::cout << "\t" << "row: " << line->getLine().first << " (column: " << line->getLine().second << ")" << "\t" << line->getFile() << std::endl;
     }
     std::cout << "Use Lines: " << std::endl;
     for (auto& line : useLines_) {
-        std::cout << "\t" << line->getFile() << ", row: " << line->getLine().first << " (column: " << line->getLine().second << ")" << std::endl;
+        std::cout << "\t" << "row: " << line->getLine().first << " (column: " << line->getLine().second << ")" << "\t" << line->getFile() << std::endl;
     }
     std::cout << std::endl;
 }
