@@ -1,0 +1,11 @@
+build
+examples
+sliceBuild
+srcattributorapp
+testing
+
+libDAI.xml
+srcML
+srcSlice
+xmlparse
+xmlparse.cpp
