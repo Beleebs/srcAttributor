@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <unordered_map>
 
 #include "json.hpp"
 #include "xml.hpp"
@@ -47,8 +48,36 @@ int main(int argc, char** argv) {
         }
     }
 
-    // EXECUTE XML PHASE!!!!!!!!!!
+    // Create handler
     SliceProfileHandler sph(slices);
-    insertAttributes(sph, outputFile);
-    
+
+    // open xml file
+    const char* xmlFile = outputFile.c_str();
+    xmlDocPtr doc = xmlReadFile(xmlFile, NULL, XML_PARSE_BIG_LINES);
+    xmlNodePtr root = xmlDocGetRootElement(doc);
+
+    // create dictionary
+    std::unordered_map<SliceLine, xmlNodePtr> locations; 
+    std::string unitFile = "";
+
+    std::cout << "Creating Dictionary..." << std::endl;
+    createNodeDictonary(slices, root, locations, unitFile);
+    std::cout << std::endl;
+
+    for (auto& l : locations) {
+        std::cout << l.first.print() << std::endl;
+    }
+
+    // create slice xml namespace
+    xmlNodePtr nsRoot = xmlDocGetRootElement(doc);
+    if (xmlSearchNs(doc, nsRoot, (const xmlChar*)"slice") == NULL) {
+        xmlNewNs(nsRoot, (const xmlChar*)"http://www.srcML.org/srcML/slice", (const xmlChar*)"slice");
+    }
+
+    // begin inserting attributes
+    insertAttributes(slices, locations);
+
+    // close files, save resources
+    xmlFreeDoc(doc);
+    file.close();
 }

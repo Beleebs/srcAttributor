@@ -17,19 +17,22 @@ void SliceProfileHandler::print() const {
 // finds current node's filename for multifile
 std::string findFileName(xmlNodePtr current) {
     // checks to see if the current element is a unit file
+    std::string result = "";
     if (xmlStrcmp(current->name, (const xmlChar*)"unit") == 0) {
         // checks for filename
         if (xmlHasProp(current, (const xmlChar*)"filename") != NULL) {
             // if filename exists, grab it!!
-            return std::string((const char*)xmlGetProp(current, (const xmlChar*)"filename"));
+            xmlChar* fileName = xmlGetProp(current, (const xmlChar*)"filename");
+            result = (const char*)fileName;
+            xmlFree(fileName);
         }
     }
     // checks for parent so it can recurse
     if (current->parent != nullptr) {
-        std::string result = findFileName(current->parent);
+        result = findFileName(current->parent);
         if (result != "") {
             return result;
-        }   
+        }
     }
     // if the following don't apply, return empty string
     return "";
@@ -95,6 +98,8 @@ xmlNodePtr SliceProfileHandler::findDecl(const SliceProfile &slice, xmlNodePtr s
                     // // std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
                     // std::cout << "line: " << beginPair.first << " <= " << hintLine << " <= " << endPair.first << std::endl;
                     // std::cout << "colm: " << beginPair.second << " <= " << hintColumn << " <= " << endPair.second << std::endl;
+                    xmlFree((void*)beginValue);
+                    xmlFree((void*)endValue);
                     if ((hintLine >= beginPair.first && hintLine <= endPair.first) && (hintColumn >= beginPair.second && hintColumn <= endPair.second)) {
                         // std::cout << "findDecl meets the requirements. Slice " << slice.getName() << " placed on line " << current->line << std::endl;
                         addAttribute(slice, current, "decl");
@@ -148,6 +153,8 @@ xmlNodePtr SliceProfileHandler::findUse(const SliceProfile &slice, xmlNodePtr st
 
                 // std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
                 // std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
+                xmlFree((void*)beginValue);
+                xmlFree((void*)endValue);
 
                 if ((hintLine >= beginPair.first && hintLine <= endPair.first) && (hintColumn >= beginPair.second && hintColumn <= endPair.second)) {
                     // std::cout << "(expr)Adding slice " << slice.getName() << " with hash " << slice.getHash() << std::endl;
@@ -179,6 +186,8 @@ xmlNodePtr SliceProfileHandler::findUse(const SliceProfile &slice, xmlNodePtr st
 
                 // std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
                 // std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
+                xmlFree((void*)beginValue);
+                xmlFree((void*)endValue);
                 
                 if ((hintLine >= beginPair.first && hintLine <= endPair.first) && (hintColumn >= beginPair.second && hintColumn <= endPair.second)) {
                     // std::cout << "(decl)Adding slice " << slice.getName() << " with hash " << slice.getHash() << std::endl;
@@ -224,9 +233,11 @@ xmlNodePtr SliceProfileHandler::findDef(const SliceProfile &slice, xmlNodePtr st
             // std::cout << "beginPair: " << beginPair.first << " " << beginPair.second << std::endl;
             // std::cout << "endPair: " << endPair.first << " " << endPair.second << std::endl;
 
+            xmlFree((void*)beginValue);
+            xmlFree((void*)endValue);
+
             if (findFileName(current) == hintFile) {
                 if ((hintLine >= beginPair.first && hintLine <= endPair.first) && (hintColumn >= beginPair.second && hintColumn <= endPair.second)) {
-                    // // std::cout << "IT WORKS FOR DEF!!" << std::endl;
                     addAttribute(slice, current, "def");
                     return current;
                 }
@@ -268,9 +279,11 @@ xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const ch
                 // checks to see if the hash is already present
                 if (containsHash(oldValue, hash)) {
                     // dont put in the new hash
+                    xmlFree((void*)oldValue);
                     return location;
                 }
-                hash = std::string((const char *)oldValue) + " " + hash;
+                hash = std::string((const char*)oldValue) + " " + hash;
+                xmlFree((void*)oldValue);
                 xmlSetNsProp(location, xmlNamespace, (const xmlChar *)"def", (const xmlChar *)hash.c_str());
                 return location;
             }
@@ -290,9 +303,10 @@ xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const ch
                 // checks if there is a hash in def with the same hash
                 if (containsHash(declValue, hash)) {
                     // if there is, just return and exit function
+                    xmlFree((void*)declValue);
                     return location;
                 }
-                // no decl hash matches? all good!!! move on.
+                xmlFree((void*)declValue);
             }
             // if the node has a def
             if (xmlHasNsProp(location, (const xmlChar*)"def", xmlNamespace->href) != NULL) {
@@ -300,9 +314,10 @@ xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const ch
                 // checks if there is a hash in def with the same hash
                 if (containsHash(defValue, hash)) {
                     // if there is, just return and exit function
+                    xmlFree((void*)defValue);
                     return location;
                 }
-                // no def hash matches? all good!!! move on.
+                xmlFree((void*)defValue);
             }
             // if the node already has a use
             if (xmlHasNsProp(location, (const xmlChar*)"use", xmlNamespace->href) != NULL) {
@@ -314,6 +329,8 @@ xmlNodePtr addAttribute(const SliceProfile &slice, xmlNodePtr location, const ch
                     newValue = std::string((const char*)oldValue) + " " + hash;
                     // std::cout << newValue << std::endl;
                 }
+                // free mem
+                xmlFree((void*)oldValue);
                 // set prop
                 xmlSetNsProp(location, xmlNamespace, (const xmlChar*)"use", (const xmlChar*)newValue.c_str());
                 return location;
@@ -355,53 +372,119 @@ bool containsHash(const xmlChar* attributeValue, std::string hash) {
     return false;
 }
 
-void insertAttributes(SliceProfileHandler& slices, std::string xmlFileName) {
-    // xml file open
-    const char* file = xmlFileName.c_str();
-    xmlDocPtr doc = xmlReadFile(file, NULL, XML_PARSE_BIG_LINES);
+void createNodeDictonary(std::vector<SliceProfile>& slices, xmlNodePtr current, std::unordered_map<SliceLine, xmlNodePtr>& dictionary, std::string& currentFile) {
+    // parse through each unit
+    // find every expr/decl
+    // create a node pointer to each one
+    // once you get this, you can pass this into insertAttributes, not needing to parse through the xml each and every time
 
-    // creates slice namespace if not already in there
-    xmlNodePtr nsRoot = xmlDocGetRootElement(doc);
-    if (xmlSearchNs(doc, nsRoot, (const xmlChar*)"slice") == NULL) {
-        xmlNewNs(nsRoot, (const xmlChar*)"http://www.srcML.org/srcML/slice", (const xmlChar*)"slice");
+    // start on outermost unit
+    // go through each unit with filename
+    // filename = srcml:filename="{name}"
+    // on every decl/expr found, create an xmlNodePtr to current
+
+    // 3/3/2026
+    // so the slice's row/column is actually based on the <name> element inside of a <decl>/<expr> element
+    // need to find the pos:begin of THAT instead.
+
+    if (!current) {
+        return;
     }
-    // std::cout << "Made Ns namespace" << std::endl;
 
-    for (const auto& sp : slices.profiles_) {
-        // step 1: decl elements
-        // std::cout << "Slice Profile: " << sp.getName() << std::endl;
-        
-        // gets root element
-        xmlNodePtr root = xmlDocGetRootElement(doc);
-        // finds decl line
-        // std::cout << "trying findDecl for profile " << sp.getName() << std::endl;
-        // std::cout << sp.getDecl()->getFile() << std::endl;
-        if (slices.findDecl(sp, root, sp.getDecl()->getLine().first, sp.getDecl()->getLine().second, sp.getDecl()->getFile())) {
-            // std::cout << "findDecl for " << sp.getName() << " success." << std::endl;
+    // goes through each unit first, grabbing the filename, then creating a SliceLine for the corresponding xmlNodePtr
+    for (current; current; current = current->next) {
+        if ((xmlStrcmp(current->name, BAD_CAST "unit") == 0) && xmlHasProp(current, BAD_CAST "filename")) {
+            currentFile = (const char*)xmlGetProp(current, BAD_CAST "filename");
         }
         
-        // step 2: defs
-        for (const auto& def : sp.getDefs()) {
-            root = xmlDocGetRootElement(doc);
-            // std::cout << "trying findDef for " << sp.getName() << std::endl;
-            if (!slices.findDef(sp, root, def->getLine().first, def->getLine().second, def->getFile())) {
-                // std::cout << "findDef did not work for: " << def->getLine().first << ", " << def->getLine().second << std::endl;
-                if (def->getLine().first == sp.getDecl()->getLine().first && def->getLine().second == sp.getDecl()->getLine().second) {}
-                    // std::cout << "Reason: Same as decl line" << std::endl;
+        if (xmlStrcmp(current->name, (const xmlChar*)"expr") == 0 || xmlStrcmp(current->name, (const xmlChar*)"decl") == 0) {
+            // look for a child name tag
+            // since a sline is based on the <name> tag in an <expr> or <decl>, get the position data from there.
+            for (xmlNodePtr nameTag = current->children; nameTag; nameTag = nameTag->next) {
+                if (xmlStrcmp(nameTag->name, (const xmlChar*)"name") == 0) {
+                    xmlNsPtr posNs = xmlSearchNs(current->doc, current, (const xmlChar*)"pos");
+                    if (!posNs) { 
+                        return;
+                    }
+
+                    // we just need the beginning value
+                    const xmlChar* beginValue = xmlGetNsProp(nameTag, (const xmlChar *)"start", posNs->href);
+                    json b = {(const char *)beginValue};
+                    std::pair<int, int> beginPair = spliceLineData(b);
+                    std::cout << "filename: " << currentFile << ", row: " << beginPair.first << ", column: " << beginPair.second << std::endl;
+
+                    // create the entry, add the xmlNodePtr
+                    dictionary[SliceLine(beginPair.first, beginPair.second, currentFile)] = current;
+                }
             }
         }
 
-        // step 3: uses
-        for (const auto& use : sp.getUses()) {
-            root = xmlDocGetRootElement(doc);
-            // std::cout << "trying findUse for " << sp.getName() << std::endl;
-            if (!slices.findUse(sp, root, use->getLine().first, use->getLine().second, use->getFile())) {
-                // std::cout << "findUse did not work for: " << use->getLine().first << ", " << use->getLine().second << std::endl;
+        // recurse
+        if (current->children) {
+            createNodeDictonary(slices, current->children, dictionary, currentFile);
+        }
+    }
+}
+
+void insertAttributes(std::vector<SliceProfile>& slices, std::unordered_map<SliceLine, xmlNodePtr>& dictionary) {
+    // go through each slice profile
+    // go through each decl, def, and use
+    // check if the corresponding SliceLine has an xmlNodePtr in the dictionary
+    // if it does, insert.
+
+    int slineCounter = 0;
+    int missCounter = 0;
+
+    std::cout << "\nGoing into insertAttributes..." << std::endl;
+    for (auto& profile : slices) {
+        std::cout << "[*] " << profile.getName() << std::endl;
+        std::cout << "\t- decl" << std::endl;
+
+        // decl
+        SliceLine decl = profile.getDecl();
+        std::cout << "\t\t" << decl.print() << std::endl;
+        slineCounter++;
+        if (dictionary.count(decl)) {
+            std::cout << "\t\t\tfound decl. pointing to " << dictionary[decl]->name << std::endl;
+            addAttribute(profile, dictionary[decl], "decl");
+        }
+        else {
+            missCounter++;
+        }
+
+        std::cout << "\t- defs" << std::endl;
+
+        // defs
+        std::vector<SliceLine> defs = profile.getDefs();
+        for (auto& d : defs) {
+            std::cout << "\t\t" << d.print() << std::endl;
+            slineCounter++;
+            if (dictionary.count(d)) {
+                std::cout << "\t\t\tfound def. pointing to " << dictionary[d]->name << std::endl;
+                addAttribute(profile, dictionary[d], "def");
+            }
+            else {
+                missCounter++;
+            }
+        }
+
+        std::cout << "\t- uses" << std::endl;
+
+        // uses
+        std::vector<SliceLine> uses = profile.getUses();
+        for (auto& u : uses) {
+            std::cout << "\t\t" << u.print() << std::endl;
+            slineCounter++;
+            if (dictionary.count(u)) {
+                std::cout << "\t\t\tfound use. pointing to " << dictionary[u]->name << std::endl;
+                addAttribute(profile, dictionary[u], "use");
+            }
+            else {
+                missCounter++;
             }
         }
     }
-
-    // save n close
-    xmlSaveFile(file, doc);
-    xmlFreeDoc(doc);
+    std::cout << "slineCounter: " << slineCounter << std::endl;
+    std::cout << "missCounter: " << missCounter << std::endl;
+    std::cout << "Avg. Hits: " << (missCounter / slineCounter) << std::endl; 
 }
